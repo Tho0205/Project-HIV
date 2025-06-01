@@ -1,4 +1,5 @@
 ﻿// Services/IBlogService.cs
+using HIV.DTOs;
 using HIV.Interfaces;
 
 public interface IBlogService

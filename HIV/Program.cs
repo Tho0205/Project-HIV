@@ -5,6 +5,7 @@ using HIV.Interfaces;
 using HIV.Repository;
 using HIV.Data;
 using System;
+using DemoSWP391.Services;
 namespace HIV
 {
     public class Program
@@ -19,13 +20,18 @@ namespace HIV
 
             //App Automapper
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
             // Add services to the container.
             builder.Services.AddControllers();
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
+
             builder.Services.AddSwaggerGen();
 
             //Adding the repository and service layer
+            builder.Services.AddScoped(typeof(ICommonOperation<>), typeof(CommonOperation<>));
+
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
             builder.Services.AddScoped<IFacilityService, FacilityService>();
@@ -33,6 +39,10 @@ namespace HIV
             builder.Services.AddScoped<IBlogService, BlogService>();
 
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
+
+            builder.Services.AddScoped<IExaminationService, ExaminationService>();
+
+            builder.Services.AddScoped<IScheduleService, ScheduleService>();
 
 
             builder.Services.AddCors(options =>
@@ -57,6 +67,7 @@ namespace HIV
             }
 
             app.UseHttpsRedirection();
+
             app.UseCors("AllowAll");
 
             app.UseAuthorization();

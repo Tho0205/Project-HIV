@@ -1,4 +1,4 @@
-﻿namespace HIV.Interfaces
+﻿namespace HIV.DTOs
 {
     public class BlogDto
     {

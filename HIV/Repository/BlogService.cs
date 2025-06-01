@@ -3,6 +3,7 @@ using HIV.Data;
 using HIV.Models;
 using HIV.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using HIV.DTOs;
 
 namespace HIV.Repository
 {

@@ -1,8 +1,9 @@
 ﻿
+using HIV.DTOs;
 using HIV.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HIV_Treatment_System_BE.Controllers
+namespace HIV.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
