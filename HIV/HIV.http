@@ -1,0 +1,6 @@
+@HIV_HostAddress = http://localhost:5017
+
+GET {{HIV_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
