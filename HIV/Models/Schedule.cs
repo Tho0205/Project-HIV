@@ -21,7 +21,7 @@ public partial class Schedule
 }
 
     //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED', 'CANCELLED', 'COMPLETED')),
-    //    created_at DATETIME DEFAULT GETDATE(),
+    //created_at DATETIME DEFAULT GETDATE(),
     //updated_at DATETIME DEFAULT GETDATE(),
 
     //Bảng này không có khóa ngoại ngoại ApointmentId vì nó không phải là bảng con của Appointment.Nó chỉ liên kết với Appointment thông qua ScheduleId.
