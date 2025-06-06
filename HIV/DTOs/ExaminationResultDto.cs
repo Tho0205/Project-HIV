@@ -10,7 +10,7 @@ namespace HIV.DTOs
         public int? Cd4Count { get; set; }
         public int? HivLoad { get; set; }
         public DateOnly? ExamDate { get; set; }
-        public string? PrescriptionDetails { get; set; }
+        public string? CustomizedArvProtocolDetails { get; set; }
     }
 
     public class CreateExaminationDto

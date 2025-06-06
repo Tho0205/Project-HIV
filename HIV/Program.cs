@@ -3,7 +3,7 @@ using HIV.Models;
 using Microsoft.EntityFrameworkCore;
 using HIV.Interfaces;
 using HIV.Repository;
-using HIV.Data;
+
 using System;
 using DemoSWP391.Services;
 namespace HIV
@@ -34,7 +34,6 @@ namespace HIV
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
-            builder.Services.AddScoped<IFacilityService, FacilityService>();
 
             builder.Services.AddScoped<IBlogService, BlogService>();
 

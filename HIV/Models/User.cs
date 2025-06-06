@@ -6,51 +6,37 @@ namespace HIV.Models;
 
 public partial class User
 {
+    [System.ComponentModel.DataAnnotations.Key]
     public int UserId { get; set; }
-
     public int AccountId { get; set; }
-
     public string? FullName { get; set; }
-
     public string? Phone { get; set; }
-
+    public string? UserAvatar { get; set; }
+    public string? Address { get; set; }
     public string? Gender { get; set; }
-
     public DateOnly? Birthdate { get; set; }
-
     public string? Role { get; set; }
-    
-    [JsonIgnore]
-    public virtual Account Account { get; set; } = null!;
-    
-    [JsonIgnore]
-    public virtual ICollection<Appointment> PatientAppointments { get; set; } = new List<Appointment>();
-    
-    [JsonIgnore]
-    public virtual ICollection<Appointment> DoctorAppointments { get; set; } = new List<Appointment>();
+    public string Status { get; set; } = "ACTIVE";
 
+    public Account Account { get; set; }
 
-    public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
+    public DoctorInfo DoctorInfo { get; set; }
 
-    public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<Blog> Blogs { get; set; }
+    public ICollection<Comment> Comments { get; set; }
+    public ICollection<EducationalResource> EducationalResources { get; set; }
+    public ICollection<Schedule> Schedules { get; set; }
 
-    public virtual ICollection<CustomizedArvProtocol> CustomizedArvProtocolDoctors { get; set; } = new List<CustomizedArvProtocol>();
+    public ICollection<Appointment> AppointmentsAsPatient { get; set; }
+    public ICollection<Appointment> AppointmentsAsDoctor { get; set; }
 
-    public virtual ICollection<CustomizedArvProtocol> CustomizedArvProtocolPatients { get; set; } = new List<CustomizedArvProtocol>();
+    public ICollection<Examination> ExaminationsAsPatient { get; set; }
+    public ICollection<Examination> ExaminationsAsDoctor { get; set; }
 
-    public virtual DoctorInfo? DoctorInfo { get; set; }
+    public ICollection<CustomizedArvProtocol> CustomProtocolsAsDoctor { get; set; }
+    public ICollection<CustomizedArvProtocol> CustomProtocolsAsPatient { get; set; }
 
-    public virtual ICollection<EducationalResource> EducationalResources { get; set; } = new List<EducationalResource>();
+    public ICollection<MedicalRecord> MedicalRecordsAsDoctor { get; set; }
+    public ICollection<MedicalRecord> MedicalRecordsAsPatient { get; set; }
 
-    public virtual ICollection<Examination> ExaminationDoctors { get; set; } = new List<Examination>();
-
-    public virtual ICollection<Examination> ExaminationPatients { get; set; } = new List<Examination>();
-
-    public virtual ICollection<Prescription> PrescriptionDoctors { get; set; } = new List<Prescription>();
-
-    public virtual ICollection<Prescription> PrescriptionPatients { get; set; } = new List<Prescription>();
-
-    public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
-    [JsonIgnore]
-    public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 }

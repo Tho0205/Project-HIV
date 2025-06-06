@@ -1,5 +1,5 @@
 ﻿
-using HIV.Data;
+
 using HIV.DTOs;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
@@ -19,9 +19,9 @@ namespace DemoSWP391.Services
         {
             var examinations = await _context.Examinations
                 .Include(e => e.Doctor)
-                .Include(e => e.Prescription)
+                .Include(e => e.MedicalRecord)
                     .ThenInclude(p => p.CustomProtocol)
-                        .ThenInclude(cp => cp.CustomizedArvProtocolDetails)
+                        .ThenInclude(cp => cp.Details)
                             .ThenInclude(d => d.Arv)
                 .Where(e => e.PatientId == patientId)
                 .OrderByDescending(e => e.ExamDate)
@@ -33,8 +33,8 @@ namespace DemoSWP391.Services
                     Cd4Count = e.Cd4Count,
                     HivLoad = e.HivLoad,
                     ExamDate = e.ExamDate,
-                    PrescriptionDetails = e.Prescription != null && e.Prescription.CustomProtocol != null
-                        ? string.Join(", ", e.Prescription.CustomProtocol.CustomizedArvProtocolDetails
+                    CustomizedArvProtocolDetails = e.MedicalRecord != null && e.MedicalRecord.CustomProtocol != null
+                        ? string.Join(", ", e.MedicalRecord.CustomProtocol.Details
                             .Select(d => $"{d.Arv.Name} - {d.Dosage}"))
                         : null
                 })
@@ -47,9 +47,9 @@ namespace DemoSWP391.Services
         {
             var examination = await _context.Examinations
                 .Include(e => e.Doctor)
-                .Include(e => e.Prescription)
+                .Include(e => e.MedicalRecord)
                     .ThenInclude(p => p.CustomProtocol)
-                        .ThenInclude(cp => cp.CustomizedArvProtocolDetails)
+                        .ThenInclude(cp => cp.Details)
                             .ThenInclude(d => d.Arv)
                 .Where(e => e.ExamId == examId)
                 .Select(e => new ExaminationResultDto
@@ -60,8 +60,8 @@ namespace DemoSWP391.Services
                     Cd4Count = e.Cd4Count,
                     HivLoad = e.HivLoad,
                     ExamDate = e.ExamDate,
-                    PrescriptionDetails = e.Prescription != null && e.Prescription.CustomProtocol != null
-                        ? string.Join(", ", e.Prescription.CustomProtocol.CustomizedArvProtocolDetails
+                    CustomizedArvProtocolDetails = e.MedicalRecord != null && e.MedicalRecord.CustomProtocol != null
+                        ? string.Join(", ", e.MedicalRecord.CustomProtocol.Details
                             .Select(d => $"{d.Arv.Name} - {d.Dosage}"))
                         : null
                 })

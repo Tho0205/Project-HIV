@@ -1,5 +1,4 @@
 ﻿
-using HIV.Data;
 using HIV.DTOs;
 using HIV.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +47,7 @@ namespace WebAPITest.Controllers
                 return BadRequest(new { title = "Password incorrect." });
             }
 
-            var user = await _context.UserTables.FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
                 
             return Ok(new
             {
@@ -100,7 +99,7 @@ namespace WebAPITest.Controllers
                 Birthdate = dto.birthdate,
                 Role = dto.role
             };
-            _context.UserTables.Add(newUser);
+            _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Register success" });
@@ -112,7 +111,7 @@ namespace WebAPITest.Controllers
         public async Task<ActionResult<DTOGetbyID>> GetAccountById(int id)
         {
             var account = await _context.Accounts
-                .Include(a => a.UserTable)
+                .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
 
             var dto = new DTOGetbyID
@@ -121,11 +120,11 @@ namespace WebAPITest.Controllers
                 username = account.Username,
                 email = account.Email,
                 created_at = (DateTime)account.CreatedAt,
-                full_name = account.UserTable.FullName,
-                phone = account.UserTable.Phone,
-                gender = account.UserTable.Gender,
-                birthdate = account.UserTable.Birthdate,
-                role = account.UserTable.Role,
+                full_name = account.User.FullName,
+                phone = account.User.Phone,
+                gender = account.User.Gender,
+                birthdate = account.User.Birthdate,
+                role = account.User.Role,
             };
 
             return Ok(dto);

@@ -7,19 +7,17 @@ namespace HIV.Models;
 
 public partial class Blog
 {
+    [System.ComponentModel.DataAnnotations.Key]
     public int BlogId { get; set; }
-
     public string? Title { get; set; }
-
     public string? Content { get; set; }
-
     public int? AuthorId { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? PublishedAt { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
-
-    public virtual User? Author { get; set; }
-
-    public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public User Author { get; set; }
+    public ICollection<Comment> Comments { get; set; }
 }
 
 

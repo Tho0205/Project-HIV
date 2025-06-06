@@ -5,19 +5,15 @@ namespace HIV.Models;
 
 public partial class Comment
 {
+    [System.ComponentModel.DataAnnotations.Key]
     public int CommentId { get; set; }
-
-    public int? BlogId { get; set; }
-
-    public int? UserId { get; set; }
-
+    public int BlogId { get; set; }
+    public int UserId { get; set; }
     public string? Content { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime? CreatedAt { get; set; }
-
-    public virtual Blog? Blog { get; set; }
-
-    public virtual User? User { get; set; }
+    public Blog Blog { get; set; }
+    public User User { get; set; }
 }
-    //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED', 'FLAGGED')),
-    //updated_at DATETIME DEFAULT GETDATE(),
+

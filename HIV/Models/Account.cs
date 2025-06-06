@@ -5,6 +5,7 @@ namespace HIV.Models;
 
 public partial class Account
 {
+    [System.ComponentModel.DataAnnotations.Key]
     public int AccountId { get; set; }
 
     public string Username { get; set; } = null!;
@@ -13,10 +14,9 @@ public partial class Account
 
     public string? Email { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public virtual User? UserTable { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+
+    public User User { get; set; }
 }
-
-    //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED')),
-    //updated_at DATETIME DEFAULT GETDATE()
