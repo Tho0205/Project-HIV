@@ -17,6 +17,5 @@ public partial class Account
 
     public virtual User? UserTable { get; set; }
 }
-
     //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED')),
     //updated_at DATETIME DEFAULT GETDATE()
