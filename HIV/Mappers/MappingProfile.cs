@@ -14,7 +14,6 @@ namespace HIV.Mappers
             // Add your mapping configurations here
             // For example:
             // CreateMap<SourceType, DestinationType>();
-            CreateMap<FacilityInfo, FacilityInfoDto>().ReverseMap();
             CreateMap<Blog, BlogDto>()
                 .ForMember(dest => dest.Author, opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : string.Empty));
             CreateMap<BlogDto, Blog>()

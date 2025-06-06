@@ -1,4 +1,4 @@
-﻿using HIV.Data;
+﻿
 using HIV.DTOs;
 using HIV.DTOs.DTOAppointment;
 using HIV.DTOs.DTOSchedule;
@@ -18,7 +18,7 @@ namespace HIV.Repository
         }
         public async Task<List<UserTableDTO>> GetAllListDoctor()
         {
-            return await _context.UserTables
+            return await _context.Users
                         .Include(u => u.Schedules)
                         .Where(u => u.Role == "doctor")
                         .Select(u => u.ToUserTableDTO())
@@ -44,12 +44,12 @@ namespace HIV.Repository
                 throw new ArgumentException("ScheduleID không tồn tại");
             }
 
-            if(await _context.UserTables.FindAsync(dto.doctorId) == null)
+            if(await _context.Users.FindAsync(dto.doctorId) == null)
             {
                 throw new ArgumentException("DoctorID không tồn tại");
             }
 
-            if (await _context.UserTables.FindAsync(dto.PatientId) == null)
+            if (await _context.Users.FindAsync(dto.PatientId) == null)
             {
                 throw new ArgumentException("PatientID không tồn tại");
             }
@@ -59,7 +59,7 @@ namespace HIV.Repository
                 ScheduleId = dto.ScheduleId,
                 DoctorId = dto.doctorId,
                 Note = dto.Note,
-                IsAnonymous = dto.IsAnonymous,
+                IsAnonymous = (bool)dto.IsAnonymous,
                 Status = "Pending",
                 CreatedAt = DateTime.Now,
                 AppointmentDate = dto.AppointmentDate
@@ -77,7 +77,7 @@ namespace HIV.Repository
         }
         public async Task<UserTableDTO> GetInforUser(int id)
         {
-            var user = await _context.UserTables.Where(u => u.UserId == id).FirstOrDefaultAsync();
+            var user = await _context.Users.Where(u => u.UserId == id).FirstOrDefaultAsync();
             return new UserTableDTO
             {
                 UserId = user.UserId,

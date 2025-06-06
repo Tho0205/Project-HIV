@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using HIV.Data;
 using HIV.Interfaces;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
