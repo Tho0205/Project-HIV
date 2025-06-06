@@ -21,6 +21,5 @@ public partial class Account
     public User User { get; set; }
 }
 
-    //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED')),
-    //updated_at DATETIME DEFAULT GETDATE()
+
 
