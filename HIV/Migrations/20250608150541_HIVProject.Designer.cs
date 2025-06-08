@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HIV.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250607113326_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250608150541_HIVProject")]
+    partial class HIVProject
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
