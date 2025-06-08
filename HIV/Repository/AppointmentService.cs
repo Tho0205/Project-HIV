@@ -12,7 +12,7 @@ namespace HIV.Repository
     public class AppointmentService : IAppointmentService
     {
         private readonly AppDbContext _context;
-        public AppointmentService(AppDbContext context) 
+        public AppointmentService(AppDbContext context)
         {
             _context = context;
         }
@@ -34,17 +34,17 @@ namespace HIV.Repository
                 Room = u.Room,
                 Status = u.Status
             }).ToListAsync();
-  
+
         }
 
         public async Task<CreateAppointmentDTO> CreateAppointment(CreateAppointmentDTO dto)
         {
-            if(await _context.Schedules.FindAsync(dto.ScheduleId) == null)
+            if (await _context.Schedules.FindAsync(dto.ScheduleId) == null)
             {
                 throw new ArgumentException("ScheduleID không tồn tại");
             }
 
-            if(await _context.Users.FindAsync(dto.doctorId) == null)
+            if (await _context.Users.FindAsync(dto.doctorId) == null)
             {
                 throw new ArgumentException("DoctorID không tồn tại");
             }
@@ -68,7 +68,7 @@ namespace HIV.Repository
 
 
             var sche = await _context.Schedules.FindAsync(appoint.ScheduleId);
-            if(sche != null)
+            if (sche != null)
             {
                 sche.Status = "Booked";
             }
@@ -89,6 +89,35 @@ namespace HIV.Repository
                 Role = user.Role
             };
         }
-    }  
-      
+        public async Task<bool> CancelAppointment(int id)
+        {
+            var appoint = await _context.Appointments.FindAsync(id);
+            if (appoint == null)
+            {
+                throw new ArgumentException("Appointment không tồn tại");
+            }
+
+            appoint.Status = "Cancel";
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<List<AppointmentDTO>> GetAll()
+        {
+            var listAppointment = await _context.Appointments.Select(a => new AppointmentDTO
+            {
+                AppointmentId = a.AppointmentId,
+                ScheduleId = a.ScheduleId,
+                doctorId = a.DoctorId,
+                Note = a.Note,
+                AppoinmentType = a.AppoinmentType,
+                Status = a.Status,
+                IsAnonymous = a.IsAnonymous,
+                AppointmentDate = a.AppointmentDate,
+                CreatedAt = a.CreatedAt
+            }).ToListAsync();
+
+            return listAppointment;
+        }
     }
+
+}
