@@ -41,7 +41,7 @@ namespace HIV.Repository
         {
             var blog = _mapper.Map<Blog>(blogDto);
             blog.AuthorId = blogDto.AuthorId;
-            //blog.IsApproved = false;
+            blog.IsApproved = false;
             blog.CreatedAt = DateTime.Now;
 
             _context.Blogs.Add(blog);
@@ -58,7 +58,7 @@ namespace HIV.Repository
 
             existingBlog.Title = blogDto.Title;
             existingBlog.Content = blogDto.Content;
-            //existingBlog.IsApproved = false;
+            existingBlog.IsApproved = false;
             existingBlog.CreatedAt = DateTime.Now;
 
             _context.Blogs.Update(existingBlog);
@@ -73,7 +73,7 @@ namespace HIV.Repository
             if (blog == null)
                 return null;
 
-            //blog.IsApproved = true;
+            blog.IsApproved = true;
             _context.Blogs.Update(blog);
             await _context.SaveChangesAsync();
 

@@ -15,15 +15,10 @@ public partial class Blog
     public string Status { get; set; } = "ACTIVE";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? PublishedAt { get; set; }
+    public bool IsApproved { get; set; } = false;
+
 
     public User Author { get; set; }
     public ICollection<Comment> Comments { get; set; }
 }
 
-
-
-
-
-    //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT', 'PUBLISHED')),
-    //updated_at DATETIME DEFAULT GETDATE(),
-    //published_at DATETIME NULL,
