@@ -85,6 +85,23 @@ namespace DemoSWP391.Services
             _context.Examinations.Add(examination);
             await _context.SaveChangesAsync();
 
+            // Tạo MedicalRecord nếu có CurrentCondition
+            if (!string.IsNullOrEmpty(dto.CurrentCondition))
+            {
+                var medicalRecord = new MedicalRecord
+                {
+                    PatientId = dto.PatientId,
+                    DoctorId = dto.DoctorId,
+                    ExamId = examination.ExamId,
+                    ExamDate = dto.ExamDate.ToDateTime(TimeOnly.MinValue),
+                    Summary = dto.CurrentCondition,
+                    Status = "ACTIVE"
+                };
+
+                _context.MedicalRecords.Add(medicalRecord);
+                await _context.SaveChangesAsync();
+            }
+
             return await GetExaminationByIdAsync(examination.ExamId)
                 ?? throw new InvalidOperationException("Failed to retrieve created examination");
         }
