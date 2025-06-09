@@ -13,9 +13,11 @@ namespace HIV.DTOs.DTOAppointment
         public string? Note { get; set; }
 
         public bool? IsAnonymous { get; set; }
-        
+
+        public string? AppoinmentType { get; set; }
+
         public string? Status { get; set; }
-        
+
         public int doctorId { get; set; }
 
         public DateTime? CreatedAt { get; set; }

@@ -10,5 +10,9 @@ namespace HIV.Interfaces
         Task<List<ScheduleSimpleDTO>> GetScheduleOfDoctor(int id_doctor);
         Task<CreateAppointmentDTO> CreateAppointment(CreateAppointmentDTO dto);
         Task<UserTableDTO> GetInforUser(int id);
+
+        Task<bool> CancelAppointment(int id);
+
+        Task<List<AppointmentDTO>> GetAll();
     }
 }
