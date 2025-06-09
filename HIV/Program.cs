@@ -6,6 +6,7 @@ using HIV.Repository;
 
 using System;
 using DemoSWP391.Services;
+using HIV.Interfaces.ARVinterfaces;
 namespace HIV
 {
     public class Program
@@ -42,6 +43,20 @@ namespace HIV
             builder.Services.AddScoped<IExaminationService, ExaminationService>();
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
+
+            builder.Services.AddScoped<IArvService, ArvService>();
+
+            builder.Services.AddScoped<IARVProtocolService, ARVProtocolService>();
+
+            builder.Services.AddScoped<IARVProtocolDetailService, ARVProtocolDetailService>();
+
+            builder.Services.AddScoped<ICustomizedArvProtocolService, CustomizedArvProtocolService>();
+
+            builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
+
+            builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
+
+            builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
 
             builder.Services.AddCors(options =>
