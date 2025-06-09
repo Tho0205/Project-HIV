@@ -48,13 +48,14 @@ namespace WebAPITest.Controllers
             }
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
-                
+
             return Ok(new
             {
                 //trả về 1 chuổi kiểu if else nếu đùng thì trả về fullname còn sai thì trả về Unknown
                 fullName = user?.FullName ?? "Unknown",
                 role = user?.Role ?? "Unknown",
-                accountid = account.AccountId
+                accountid = account.AccountId,
+                user_avatar = user?.UserAvatar ?? "Unknown"
             });
         }
 
@@ -86,18 +87,19 @@ namespace WebAPITest.Controllers
             _context.Accounts.Add(newAccount);
             await _context.SaveChangesAsync();
 
-            Random random = new Random();
 
             //sau khi có account_id mới tiến hành thêm Data của User vô
             var newUser = new User
             {
-                UserId = random.Next(1000000, 10000000),
+                UserId = dto.user_id,
                 AccountId = newAccount.AccountId,
                 FullName = dto.full_name,
                 Phone = dto.phone,
                 Gender = dto.gender,
                 Birthdate = dto.birthdate,
-                Role = dto.role
+                Role = dto.role,
+                Address = dto.address,
+                UserAvatar = string.IsNullOrWhiteSpace(dto.user_avatar) ? "patient.png" : dto.user_avatar
             };
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
@@ -114,6 +116,11 @@ namespace WebAPITest.Controllers
                 .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
 
+            if (account == null)
+            {
+                return NotFound();
+            }
+
             var dto = new DTOGetbyID
             {
                 account_id = account.AccountId,
@@ -125,21 +132,154 @@ namespace WebAPITest.Controllers
                 gender = account.User.Gender,
                 birthdate = account.User.Birthdate,
                 role = account.User.Role,
+                address = account.User.Address,
+                user_avatar = account.User.UserAvatar
             };
 
             return Ok(dto);
         }
 
-        //[HttpPut("{id}")]
-        //[ProducesResponseType(400)]
-        //[ProducesResponseType(204)]
-        //[ProducesResponseType(404)]
+        [HttpPut("Update/{id}")]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
 
-        //public async Task<ActionResult<DTOGetbyID>> UpdateInfo(int account_id, [FromBody]DTOGetbyID updateinfo)
-        //{
-        //    var account = await _context.Account
-        //        .Include(a => a.User)
-        //        .FirstOrDefaultAsync(a => a.account_id == account_id);
-        //}
+        public async Task<ActionResult<DTOUpdate>> UpdateInfo(int id, [FromBody] DTOUpdate updateinfo)
+        {
+            var account = await _context.Accounts
+                .Include(a => a.User)
+                .FirstOrDefaultAsync(a => a.AccountId == id);
+            if (account == null)
+            {
+                return NotFound();
+            }
+
+            account.Email = updateinfo.email;
+            account.User.FullName = updateinfo.full_name;
+            account.User.Gender = updateinfo.gender;
+            account.User.Phone = updateinfo.phone;
+            account.User.Birthdate = updateinfo.birthdate;
+            account.User.Role = updateinfo.role;
+            account.User.Address = updateinfo.address;
+            account.User.UserAvatar = updateinfo.user_avatar;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+        [HttpPut("ChangePass/{id}")]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePassword changepass)
+        {
+            var account = await _context.Accounts
+                .Include(a => a.User)
+                .FirstOrDefaultAsync(a => a.AccountId == id);
+
+            if (account == null)
+            {
+                return NotFound();
+            }
+
+            account.PasswordHash = changepass.password_hash;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+
+        [HttpGet("Patient")]
+        public async Task<ActionResult<IEnumerable<DTOGetPatient>>> GetAllPatient()
+        {
+            var patients = await _context.Accounts
+                  .Include(a => a.User)
+                  .Where(a => a.User.Role == "Patient")
+                  .Select(account => new DTOGetPatient
+                  {
+                      email = account.Email,
+                      created_at = (DateTime)account.CreatedAt,
+                      full_name = account.User.FullName,
+                      phone = account.User.Phone,
+                      gender = account.User.Gender,
+                      birthdate = account.User.Birthdate,
+                      address = account.User.Address,
+                      UserAvatar = account.User.UserAvatar,
+                      status = account.Status
+                  })
+                       .ToListAsync();
+
+            return Ok(patients);
+        }
+
+        [HttpPost("UploadAvatar/{accountId}")]
+        public async Task<IActionResult> UploadAvatar(int accountId, IFormFile avatar)
+        {
+            if (avatar == null || avatar.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            var account = await _context.Accounts
+                .Include(a => a.User)
+                .FirstOrDefaultAsync(a => a.AccountId == accountId);
+
+            if (account == null)
+                return NotFound("Account not found.");
+
+            var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Avatars");
+            if (!Directory.Exists(uploadFolder))
+                Directory.CreateDirectory(uploadFolder);
+
+            // Xóa file avatar cũ nếu có
+            var oldFileName = account.User.UserAvatar;
+            if (!string.IsNullOrEmpty(oldFileName))
+            {
+                var oldFilePath = Path.Combine(uploadFolder, oldFileName);
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    System.IO.File.Delete(oldFilePath);
+                }
+            }
+
+            var fileName = Guid.NewGuid() + Path.GetExtension(avatar.FileName);
+            var filePath = Path.Combine(uploadFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await avatar.CopyToAsync(stream);
+            }
+
+            // Lưu tên file mới vào DB (chỉ lưu tên file, không lưu full đường dẫn)
+            account.User.UserAvatar = fileName;
+            await _context.SaveChangesAsync();
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var imageUrl = $"{baseUrl}/api/account/avatar/{fileName}";
+
+            return Ok(new { path = imageUrl });
+        }
+
+
+        [HttpGet("avatar/{fileName}")]
+        public IActionResult GetAvatar(string fileName)
+        {
+            var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Avatars");
+            var filePath = Path.Combine(uploadFolder, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var ext = Path.GetExtension(fileName).ToLower();
+            var contentType = ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream"
+            };
+            return PhysicalFile(filePath, contentType);
+        }
+
+
     }
 }

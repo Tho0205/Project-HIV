@@ -2,21 +2,11 @@
 
 namespace HIV.DTOs
 {
-    public class DTOGetbyID
+    public class DTOGetPatient
     {
-        public int account_id { get; set; }
-
-        public int user_id { get; set; }
-
-        [Required]
-        public string username { get; set; }
-
         [Required]
         [EmailAddress]
         public string email { get; set; }
-
-        public string password_hash { get; set; }
-
         public DateTime created_at { get; set; }
 
         [Required]
@@ -30,13 +20,11 @@ namespace HIV.DTOs
         public string gender { get; set; }
 
         public DateOnly? birthdate { get; set; }
-        public string role { get; set; }
 
         public string address { get; set; }
+        public string? UserAvatar { get; set; }
 
-        public string status { get; set; } = "ACTIVE";
-
-        public string? user_avatar { get; set; } = "patient.png";
+        public string status { get; set; }
 
     }
 }
