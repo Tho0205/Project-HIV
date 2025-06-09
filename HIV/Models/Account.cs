@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace HIV.Models;
 
+// Xin chao
+// This file is part of the HIV project, which is licensed under the GNU General Public License v3.0.
 public partial class Account
 {
     [System.ComponentModel.DataAnnotations.Key]
