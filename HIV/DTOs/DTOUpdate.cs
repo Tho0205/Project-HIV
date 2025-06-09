@@ -2,22 +2,12 @@
 
 namespace HIV.DTOs
 {
-    public class DTOGetbyID
+    public class DTOUpdate
     {
-        public int account_id { get; set; }
-
-        public int user_id { get; set; }
-
-        [Required]
-        public string username { get; set; }
-
         [Required]
         [EmailAddress]
+
         public string email { get; set; }
-
-        public string password_hash { get; set; }
-
-        public DateTime created_at { get; set; }
 
         [Required]
         public string full_name { get; set; }
@@ -34,9 +24,7 @@ namespace HIV.DTOs
 
         public string address { get; set; }
 
-        public string status { get; set; } = "ACTIVE";
-
-        public string? user_avatar { get; set; } = "patient.png";
+        public string? user_avatar { get; set; }
 
     }
 }
