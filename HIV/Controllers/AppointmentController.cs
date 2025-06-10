@@ -57,5 +57,22 @@ namespace HIV.Controllers
             await _appService.CreateAppointment(dto);
             return Ok("create success");
         }
+
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteAppointment(int id)
+        {
+            var check = await _appService.CancelAppointment(id);
+            if (!check) return NotFound("Không tìm thấy id");
+            return Ok("delete success");
+        }
+
+        [HttpGet("GetAll")]
+
+        public async Task<ActionResult<List<AppointmentDTO>>> GetAll()
+        {
+            var listAppoint = await _appService.GetAll();
+            return Ok(listAppoint);
+        }
+
     }   
 }   
