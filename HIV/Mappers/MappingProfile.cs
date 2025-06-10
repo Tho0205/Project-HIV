@@ -21,6 +21,9 @@ namespace HIV.Mappers
             CreateMap<EducationalResource, EducationalResourcesDto>()
                 //.ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();
+            CreateMap<Comment, CommentDto>()
+                .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+                .ReverseMap();
 
         }
     }

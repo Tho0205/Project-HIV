@@ -36,7 +36,6 @@ namespace HIV
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
-
             builder.Services.AddScoped<IBlogService, BlogService>();
 
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
@@ -58,6 +57,8 @@ namespace HIV
             builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
 
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
 
             builder.Services.AddCors(options =>
