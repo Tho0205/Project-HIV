@@ -23,6 +23,10 @@ namespace HIV.Repository
             var comment = _mapper.Map<Comment>(commentDto);
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
+
+            var saved = await _context.Comments
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.CommentId == comment.CommentId);
             return _mapper.Map<CommentDto>(comment);
         }
 
@@ -30,6 +34,7 @@ namespace HIV.Repository
         {
             var comments = await _context.Comments
                 .Where(c => c.BlogId == blogId && c.Status == "ACTIVE")
+                .Include(c => c.User)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
             return await Task.FromResult(_mapper.Map<List<CommentDto>>(comments));

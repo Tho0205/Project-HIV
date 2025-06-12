@@ -7,6 +7,7 @@ using HIV.Repository;
 using System;
 using DemoSWP391.Services;
 using HIV.Interfaces.ARVinterfaces;
+using Microsoft.Extensions.FileProviders;
 namespace HIV
 {
 
@@ -72,6 +73,14 @@ namespace HIV
             });
 
             var app = builder.Build();
+
+            //Upload Images
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/Uploads"
+            });
 
 
             // Configure the HTTP request pipeline.
