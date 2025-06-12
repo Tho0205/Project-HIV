@@ -16,6 +16,7 @@ public partial class Blog
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? PublishedAt { get; set; }
     public bool IsApproved { get; set; } = false;
+    public string? ImageUrl { get; set; }
 
 
     public User Author { get; set; }

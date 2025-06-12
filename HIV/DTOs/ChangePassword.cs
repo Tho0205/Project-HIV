@@ -5,7 +5,7 @@ namespace HIV.DTOs
 {
     public class ChangePassword : IValidatableObject
     {
-        [Required(ErrorMessage = "Password is required.")]
+        [Required(ErrorMessage = "Password is required.")]  
         [StringLength(50, MinimumLength = 4, ErrorMessage = "Password must be between 4 and 50 characters.")]
         public string password_hash { get; set; }
 
