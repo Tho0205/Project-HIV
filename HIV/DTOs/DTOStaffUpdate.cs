@@ -2,8 +2,13 @@
 
 namespace HIV.DTOs
 {
-    public class DTOUpdate
+    public class DTOStaffUpdate
     {
+
+        [Required]
+        [EmailAddress]
+
+        public string email { get; set; }
 
         [Required]
         public string full_name { get; set; }
@@ -22,6 +27,6 @@ namespace HIV.DTOs
 
         public string? user_avatar { get; set; }
 
-
+        public string Status { get; set; } = "ACTIVE";
     }
 }

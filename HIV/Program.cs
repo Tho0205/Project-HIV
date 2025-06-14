@@ -7,8 +7,10 @@ using HIV.Repository;
 using System;
 using DemoSWP391.Services;
 using HIV.Interfaces.ARVinterfaces;
+using Microsoft.Extensions.FileProviders;
 namespace HIV
 {
+
     public class Program
     {
         public static void Main(string[] args)
@@ -35,7 +37,6 @@ namespace HIV
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
-
             builder.Services.AddScoped<IBlogService, BlogService>();
 
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
@@ -58,6 +59,8 @@ namespace HIV
 
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
+            builder.Services.AddScoped<ICommentService, CommentService>();
+
 
             builder.Services.AddCors(options =>
             {
@@ -70,6 +73,14 @@ namespace HIV
             });
 
             var app = builder.Build();
+
+            //Upload Images
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/Uploads"
+            });
 
 
             // Configure the HTTP request pipeline.
