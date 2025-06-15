@@ -1,12 +1,12 @@
-
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
 using HIV.Interfaces;
 using HIV.Repository;
-
 using System;
 using DemoSWP391.Services;
 using HIV.Interfaces.ARVinterfaces;
+using Microsoft.Extensions.FileProviders;
+
 namespace HIV
 {
     public class Program
@@ -15,7 +15,7 @@ namespace HIV
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //Add Dd context
+            //Add Db context
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -27,37 +27,23 @@ namespace HIV
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-
             builder.Services.AddSwaggerGen();
 
             //Adding the repository and service layer
             builder.Services.AddScoped(typeof(ICommonOperation<>), typeof(CommonOperation<>));
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-
-
             builder.Services.AddScoped<IBlogService, BlogService>();
-
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
-
-            builder.Services.AddScoped<IExaminationService, ExaminationService>();
-
+            builder.Services.AddScoped<IHIVExaminationService, HIVExaminationService>();
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
-
             builder.Services.AddScoped<IArvService, ArvService>();
-
             builder.Services.AddScoped<IARVProtocolService, ARVProtocolService>();
-
             builder.Services.AddScoped<IARVProtocolDetailService, ARVProtocolDetailService>();
-
             builder.Services.AddScoped<ICustomizedArvProtocolService, CustomizedArvProtocolService>();
-
             builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
-
             builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
-
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
-
 
             builder.Services.AddCors(options =>
             {
@@ -71,9 +57,20 @@ namespace HIV
 
             var app = builder.Build();
 
+            //Upload Images
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/Uploads"
+            });
 
             // Configure the HTTP request pipeline.
-
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -81,12 +78,8 @@ namespace HIV
             }
 
             app.UseHttpsRedirection();
-
             app.UseCors("AllowAll");
-
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();
