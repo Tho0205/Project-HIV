@@ -20,4 +20,10 @@
         public string? Description { get; set; }
         public string Status { get; set; } = "ACTIVE";
     }
+    public class ARVProDetailDto
+    {
+        public int ArvId { get; set; }
+        public string ArvName { get; set; }
+        public string UsageInstruction { get; set; }
+    }
 }
