@@ -1,4 +1,4 @@
-
+﻿
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
 using HIV.Interfaces;
@@ -90,6 +90,15 @@ namespace HIV
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+                RequestPath = "/uploads"
+            });
+
+            app.UseStaticFiles();
 
             app.UseHttpsRedirection();
 
