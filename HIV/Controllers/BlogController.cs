@@ -11,9 +11,11 @@ namespace HIV.Controllers
     public class BlogController : ControllerBase
     {
         private readonly IBlogService _blogService;
-        public BlogController(IBlogService blogService)
+        private readonly IWebHostEnvironment _env;
+        public BlogController(IBlogService blogService, IWebHostEnvironment env)
         {
             _blogService = blogService;
+            _env = env;
         }
 
         [HttpGet("list")]
@@ -81,6 +83,50 @@ namespace HIV.Controllers
                 return NotFound();
             }
             return NoContent();
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload(IFormFile file)
+        {
+            try
+            {
+                // Validate
+                if (file == null || file.Length == 0)
+                    return BadRequest("No file uploaded");
+
+                // Kiểm tra loại file
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLower();
+                if (!allowedExtensions.Contains(fileExtension))
+                    return BadRequest("Invalid file type. Only images are allowed");
+
+                // Giới hạn kích thước (ví dụ 5MB)
+                if (file.Length > 5 * 1024 * 1024)
+                    return BadRequest("File size exceeds 5MB limit");
+
+                // Tạo thư mục nếu chưa tồn tại
+                var uploadPath = Path.Combine(_env.ContentRootPath, "Uploads", "Blogs");
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                // Tạo tên file an toàn
+                var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(uploadPath, fileName);
+
+                // Lưu file
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Trả về URL truy cập
+                var imageUrl = $"/Uploads/Blogs/{fileName}";
+                return Ok(new { imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }
