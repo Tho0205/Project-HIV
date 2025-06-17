@@ -90,7 +90,6 @@ namespace HIV.Controllers
         {
             try
             {
-                // Validate
                 if (file == null || file.Length == 0)
                     return BadRequest("No file uploaded");
 
@@ -100,7 +99,7 @@ namespace HIV.Controllers
                 if (!allowedExtensions.Contains(fileExtension))
                     return BadRequest("Invalid file type. Only images are allowed");
 
-                // Giới hạn kích thước (ví dụ 5MB)
+                // Giới hạn kích thước 
                 if (file.Length > 5 * 1024 * 1024)
                     return BadRequest("File size exceeds 5MB limit");
 
