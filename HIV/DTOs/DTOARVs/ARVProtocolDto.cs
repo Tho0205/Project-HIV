@@ -24,6 +24,7 @@
     {
         public int ArvId { get; set; }
         public string ArvName { get; set; }
+        public string Dosage { get; set; }
         public string UsageInstruction { get; set; }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using HIV.DTOs.DTOARVs;
 using HIV.Interfaces.ARVinterfaces;
-using HIV.Repository;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -43,7 +42,9 @@ namespace HIV.Controllers
         {
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            return NoContent();
+
+            var item = await _service.GetByIdAsync(id); // ✅ Trả lại bản ghi mới
+            return Ok(item);
         }
 
         [HttpDelete("{id:int}")]
@@ -51,7 +52,8 @@ namespace HIV.Controllers
         {
             var deleted = await _service.DeleteAsync(id);
             if (!deleted) return NotFound();
-            return NoContent();
+
+            return Ok(new { success = true, message = "ARV Protocol đã được xoá (mềm)." });
         }
 
         [HttpGet("{id}/arv-details")]
@@ -61,7 +63,7 @@ namespace HIV.Controllers
 
             if (details == null || !details.Any())
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy chi tiết ARV tương ứng." });
             }
 
             return Ok(details);

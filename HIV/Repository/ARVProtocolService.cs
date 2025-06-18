@@ -50,6 +50,7 @@ namespace HIV.Repository
                 {
                     ArvId = d.ArvId,
                     ArvName = d.Arv.Name,
+                    Dosage = d.Dosage,
                     UsageInstruction = d.UsageInstruction
                 })
                 .ToListAsync();
