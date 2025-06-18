@@ -55,7 +55,8 @@ namespace WebAPITest.Controllers
                 fullName = user?.FullName ?? "Unknown",
                 role = user?.Role ?? "Unknown",
                 accountid = account.AccountId,
-                user_avatar = user?.UserAvatar ?? "Unknown"
+                user_avatar = user?.UserAvatar ?? "Unknown",
+                userid = account.User.UserId
             });
         }
 
@@ -153,8 +154,6 @@ namespace WebAPITest.Controllers
             {
                 return NotFound();
             }
-
-            account.Email = updateinfo.email;
             account.User.FullName = updateinfo.full_name;
             account.User.Gender = updateinfo.gender;
             account.User.Phone = updateinfo.phone;
@@ -162,7 +161,6 @@ namespace WebAPITest.Controllers
             account.User.Role = updateinfo.role;
             account.User.Address = updateinfo.address;
             account.User.UserAvatar = updateinfo.user_avatar;
-
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -190,29 +188,6 @@ namespace WebAPITest.Controllers
         }
 
 
-        [HttpGet("Patient")]
-        public async Task<ActionResult<IEnumerable<DTOGetPatient>>> GetAllPatient()
-        {
-            var patients = await _context.Accounts
-                  .Include(a => a.User)
-                  .Where(a => a.User.Role == "Patient")
-                  .Select(account => new DTOGetPatient
-                  {
-                      email = account.Email,
-                      created_at = (DateTime)account.CreatedAt,
-                      full_name = account.User.FullName,
-                      phone = account.User.Phone,
-                      gender = account.User.Gender,
-                      birthdate = account.User.Birthdate,
-                      address = account.User.Address,
-                      UserAvatar = account.User.UserAvatar,
-                      status = account.Status
-                  })
-                       .ToListAsync();
-
-            return Ok(patients);
-        }
-
         [HttpPost("UploadAvatar/{accountId}")]
         public async Task<IActionResult> UploadAvatar(int accountId, IFormFile avatar)
         {
@@ -232,7 +207,7 @@ namespace WebAPITest.Controllers
 
             // Xóa file avatar cũ nếu có
             var oldFileName = account.User.UserAvatar;
-            if (!string.IsNullOrEmpty(oldFileName))
+            if (!string.IsNullOrEmpty(oldFileName) && oldFileName.ToLower() != "patient.png")
             {
                 var oldFilePath = Path.Combine(uploadFolder, oldFileName);
                 if (System.IO.File.Exists(oldFilePath))

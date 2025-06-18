@@ -4,6 +4,7 @@ namespace HIV.DTOs
 {
     public class DTOGetPatient
     {
+        public int AccountId { get; set; }
         [Required]
         [EmailAddress]
         public string email { get; set; }

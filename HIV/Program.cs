@@ -9,6 +9,7 @@ using Microsoft.Extensions.FileProviders;
 
 namespace HIV
 {
+
     public class Program
     {
         public static void Main(string[] args)
@@ -33,6 +34,7 @@ namespace HIV
             builder.Services.AddScoped(typeof(ICommonOperation<>), typeof(CommonOperation<>));
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
             builder.Services.AddScoped<IBlogService, BlogService>();
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
             builder.Services.AddScoped<IHIVExaminationService, HIVExaminationService>();
@@ -44,6 +46,8 @@ namespace HIV
             builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
             builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
             builder.Services.AddCors(options =>
             {
@@ -63,6 +67,11 @@ namespace HIV
             {
                 Directory.CreateDirectory(uploadsPath);
             }
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/Uploads"
+            });
 
             app.UseStaticFiles(new StaticFileOptions
             {
@@ -76,6 +85,15 @@ namespace HIV
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+                RequestPath = "/uploads"
+            });
+
+            app.UseStaticFiles();
 
             app.UseHttpsRedirection();
             app.UseCors("AllowAll");
