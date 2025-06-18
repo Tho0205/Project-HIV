@@ -1,6 +1,7 @@
 ﻿using HIV.DTOs;
 using HIV.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HIV.Controllers
 {
@@ -8,208 +9,119 @@ namespace HIV.Controllers
     [Route("api/[controller]")]
     public class HIVExaminationController : ControllerBase
     {
-        private readonly IHIVExaminationService _hivExaminationService;
+        private readonly IHIVExaminationService _service;
         private readonly ILogger<HIVExaminationController> _logger;
 
         public HIVExaminationController(
-            IHIVExaminationService hivExaminationService,
+            IHIVExaminationService service,
             ILogger<HIVExaminationController> logger)
         {
-            _hivExaminationService = hivExaminationService;
+            _service = service;
             _logger = logger;
         }
 
         /// <summary>
-        /// Tạo kết quả xét nghiệm HIV mới (Staff Feature)
+        /// Get all patients with exam count
         /// </summary>
-        [HttpPost]
-        public async Task<ActionResult<ApiResponseDTO<HIVExaminationResponseDTO>>> CreateHIVExamination(
-            [FromBody] CreateHIVExaminationDTO createDto)
+        [HttpGet("patients")]
+        public async Task<ActionResult<BaseResponseDTO<List<PatientListDTO>>>> GetPatients(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var patients = await _service.GetPatientsAsync(page, pageSize);
+                return Ok(BaseResponseDTO<List<PatientListDTO>>.Ok(patients));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting patients");
+                return StatusCode(500, BaseResponseDTO<List<PatientListDTO>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get patient examinations
+        /// </summary>
+        [HttpGet("patient/{patientId}/examinations")]
+        public async Task<ActionResult<BaseResponseDTO<List<ExaminationDTO>>>> GetPatientExaminations(int patientId)
+        {
+            try
+            {
+                var examinations = await _service.GetPatientExaminationsAsync(patientId);
+                return Ok(BaseResponseDTO<List<ExaminationDTO>>.Ok(examinations));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting patient examinations");
+                return StatusCode(500, BaseResponseDTO<List<ExaminationDTO>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Create or Update examination
+        /// </summary>
+        [HttpPost("save")]
+        public async Task<ActionResult<BaseResponseDTO<ExaminationDTO>>> SaveExamination(
+            [FromBody] ExaminationFormDTO dto)
         {
             try
             {
                 if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
+                    return BadRequest(BaseResponseDTO<ExaminationDTO>.Fail("Invalid data"));
 
-                    return BadRequest(ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(
-                        "Dữ liệu không hợp lệ", errors));
-                }
+                var result = await _service.SaveExaminationAsync(dto);
+                var message = dto.ExamId.HasValue ? "Updated successfully" : "Created successfully";
 
-                var result = await _hivExaminationService.CreateHIVExaminationAsync(createDto);
-
-                _logger.LogInformation("Staff tạo kết quả xét nghiệm HIV thành công - ExamId: {ExamId}", result.ExamId);
-
-                return CreatedAtAction(
-                    nameof(GetHIVExaminationById),
-                    new { id = result.ExamId },
-                    ApiResponseDTO<HIVExaminationResponseDTO>.SuccessResult(result, "Tạo kết quả xét nghiệm thành công"));
+                return Ok(BaseResponseDTO<ExaminationDTO>.Ok(result, message));
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning("Validation error: {Message}", ex.Message);
-                return BadRequest(ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(ex.Message));
+                return BadRequest(BaseResponseDTO<ExaminationDTO>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi tạo kết quả xét nghiệm HIV");
-                return StatusCode(500, ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống. Vui lòng thử lại sau."));
+                _logger.LogError(ex, "Error saving examination");
+                return StatusCode(500, BaseResponseDTO<ExaminationDTO>.Fail("Internal server error"));
             }
         }
 
         /// <summary>
-        /// Lấy thông tin chi tiết kết quả xét nghiệm HIV
-        /// </summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponseDTO<HIVExaminationResponseDTO>>> GetHIVExaminationById(int id)
-        {
-            try
-            {
-                var result = await _hivExaminationService.GetHIVExaminationByIdAsync(id);
-                return Ok(ApiResponseDTO<HIVExaminationResponseDTO>.SuccessResult(result, "Lấy thông tin thành công"));
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi lấy thông tin xét nghiệm HIV - ID: {ExamId}", id);
-                return StatusCode(500, ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
-            }
-        }
-
-        /// <summary>
-        /// Lấy lịch sử xét nghiệm HIV của bệnh nhân
-        /// </summary>
-        [HttpGet("patient/{patientId}/history")]
-        public async Task<ActionResult<ApiResponseDTO<List<HIVExaminationResponseDTO>>>> GetPatientHistory(int patientId)
-        {
-            try
-            {
-                var history = await _hivExaminationService.GetPatientHIVExaminationHistoryAsync(patientId);
-                return Ok(ApiResponseDTO<List<HIVExaminationResponseDTO>>.SuccessResult(
-                    history, "Lấy lịch sử xét nghiệm thành công"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi lấy lịch sử xét nghiệm của bệnh nhân - PatientId: {PatientId}", patientId);
-                return StatusCode(500, ApiResponseDTO<List<HIVExaminationResponseDTO>>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
-            }
-        }
-
-        /// <summary>
-        /// Cập nhật kết quả xét nghiệm HIV
-        /// </summary>
-        [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponseDTO<HIVExaminationResponseDTO>>> UpdateHIVExamination(
-            int id, [FromBody] UpdateHIVExaminationDTO updateDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
-
-                    return BadRequest(ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(
-                        "Dữ liệu không hợp lệ", errors));
-                }
-
-                var result = await _hivExaminationService.UpdateHIVExaminationAsync(id, updateDto);
-
-                _logger.LogInformation("Cập nhật kết quả xét nghiệm HIV thành công - ExamId: {ExamId}", id);
-
-                return Ok(ApiResponseDTO<HIVExaminationResponseDTO>.SuccessResult(result, "Cập nhật thành công"));
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi cập nhật kết quả xét nghiệm HIV - ExamId: {ExamId}", id);
-                return StatusCode(500, ApiResponseDTO<HIVExaminationResponseDTO>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
-            }
-        }
-
-        /// <summary>
-        /// Lấy danh sách tất cả kết quả xét nghiệm (có phân trang)
-        /// </summary>
-        [HttpGet("all")]
-        public async Task<ActionResult<ApiResponseDTO<List<HIVExaminationSummaryDTO>>>> GetAllExaminations(
-            [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            try
-            {
-                if (page < 1) page = 1;
-                if (pageSize < 1 || pageSize > 100) pageSize = 10;
-
-                var examinations = await _hivExaminationService.GetAllHIVExaminationsAsync(page, pageSize);
-                return Ok(ApiResponseDTO<List<HIVExaminationSummaryDTO>>.SuccessResult(
-                    examinations, "Lấy danh sách thành công"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi lấy danh sách tất cả xét nghiệm HIV");
-                return StatusCode(500, ApiResponseDTO<List<HIVExaminationSummaryDTO>>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
-            }
-        }
-
-        /// <summary>
-        /// Lấy danh sách bác sĩ để chọn trong form
-        /// </summary>
-        [HttpGet("doctors")]
-        public async Task<ActionResult<ApiResponseDTO<List<DoctorSimpleDTO>>>> GetDoctorsForSelection()
-        {
-            try
-            {
-                var doctors = await _hivExaminationService.GetDoctorsForSelectionAsync();
-                return Ok(ApiResponseDTO<List<DoctorSimpleDTO>>.SuccessResult(
-                    doctors, "Lấy danh sách bác sĩ thành công"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi lấy danh sách bác sĩ");
-                return StatusCode(500, ApiResponseDTO<List<DoctorSimpleDTO>>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
-            }
-        }
-
-        /// <summary>
-        /// Xóa kết quả xét nghiệm HIV (soft delete)
+        /// Delete examination (soft delete)
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult<ApiResponseDTO<bool>>> DeleteHIVExamination(int id)
+        public async Task<ActionResult<BaseResponseDTO<bool>>> DeleteExamination(int id)
         {
             try
             {
-                var result = await _hivExaminationService.DeleteHIVExaminationAsync(id);
-
+                var result = await _service.DeleteExaminationAsync(id);
                 if (!result)
-                {
-                    return NotFound(ApiResponseDTO<bool>.ErrorResult("Không tìm thấy kết quả xét nghiệm"));
-                }
+                    return NotFound(BaseResponseDTO<bool>.Fail("Examination not found"));
 
-                _logger.LogInformation("Xóa kết quả xét nghiệm HIV thành công - ExamId: {ExamId}", id);
-
-                return Ok(ApiResponseDTO<bool>.SuccessResult(true, "Xóa thành công"));
+                return Ok(BaseResponseDTO<bool>.Ok(true, "Deleted successfully"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi xóa kết quả xét nghiệm HIV - ExamId: {ExamId}", id);
-                return StatusCode(500, ApiResponseDTO<bool>.ErrorResult(
-                    "Đã xảy ra lỗi trong hệ thống"));
+                _logger.LogError(ex, "Error deleting examination");
+                return StatusCode(500, BaseResponseDTO<bool>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get doctors for dropdown
+        /// </summary>
+        [HttpGet("doctors")]
+        public async Task<ActionResult<BaseResponseDTO<List<object>>>> GetDoctors()
+        {
+            try
+            {
+                var doctors = await _service.GetDoctorsAsync();
+                return Ok(BaseResponseDTO<List<object>>.Ok(doctors));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting doctors");
+                return StatusCode(500, BaseResponseDTO<List<object>>.Fail("Internal server error"));
             }
         }
     }
