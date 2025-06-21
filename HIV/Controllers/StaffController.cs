@@ -76,7 +76,7 @@ namespace HIV.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
 
-        public async Task<ActionResult<DTOUpdate>> StaffUpdateInfo(int id, [FromBody] DTOStaffUpdate updateinfo)
+        public async Task<ActionResult<DTOUpdate>> StaffUpdateInfo(int id, [FromBody] DTOStaffUpdate updateinfo)    
         {
             var account = await _context.Accounts
                 .Include(a => a.User)
