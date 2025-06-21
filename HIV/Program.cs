@@ -46,7 +46,7 @@ namespace HIV
             builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
             builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
-
+            builder.Services.AddScoped<IDoctorMangamentPatient, DoctorPatientService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
 
             builder.Services.AddCors(options =>
