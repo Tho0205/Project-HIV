@@ -31,12 +31,12 @@ namespace HIV.Hubs
         {
             if (_users.TryGetValue(toUser, out var toConn))
             {
-                await Clients.Client(toConn).SendAsync("ReceivePrivateMessage", fromUser, message);
+                await Clients.Client(toConn).SendAsync("ReceivePrivateMessage", fromUser, message, toUser);
             }
 
             if (_users.TryGetValue(fromUser, out var fromConn))
             {
-                await Clients.Client(fromConn).SendAsync("ReceivePrivateMessage", fromUser, message);
+                await Clients.Client(fromConn).SendAsync("ReceivePrivateMessage", fromUser, message, toUser);
             }
         }
     }
