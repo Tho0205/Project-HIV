@@ -1,4 +1,4 @@
-using HIV.Models;
+﻿using HIV.Models;
 using Microsoft.EntityFrameworkCore;
 using HIV.Interfaces;
 using HIV.Repository;
@@ -6,6 +6,8 @@ using System;
 using DemoSWP391.Services;
 using HIV.Interfaces.ARVinterfaces;
 using Microsoft.Extensions.FileProviders;
+using HIV.Hubs;
+
 
 namespace HIV
 {
@@ -15,6 +17,8 @@ namespace HIV
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddSignalR();
 
             //Add Db context
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -51,11 +55,13 @@ namespace HIV
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder =>
+                options.AddPolicy("AllowReact", policy =>
                 {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader();
+                    policy.WithOrigins(
+                            "http://localhost:3000") 
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -96,9 +102,12 @@ namespace HIV
             app.UseStaticFiles();
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
+            app.UseCors("AllowReact");
+
+
             app.UseAuthorization();
             app.MapControllers();
+            app.MapHub<ChatHub>("/chathub");
 
             app.Run();
         }
