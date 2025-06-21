@@ -41,6 +41,20 @@ namespace HIV.Repository
             };
         }
 
+        public async Task<IEnumerable<ARVProDetailDto>> GetARVDetailsByProtocolIdAsync(int protocolId)
+        {
+            return await _context.ARVProtocolDetails
+                .Where(d => d.ProtocolId == protocolId && d.Status == "ACTIVE")
+                .Include(d => d.Arv)
+                .Select(d => new ARVProDetailDto
+                {
+                    ArvId = d.ArvId,
+                    ArvName = d.Arv.Name,
+                    UsageInstruction = d.UsageInstruction
+                })
+                .ToListAsync();
+        }
+
         public async Task<ARVProtocolDto> CreateAsync(CreateARVProtocolDto dto)
         {
             var entity = new ARVProtocol

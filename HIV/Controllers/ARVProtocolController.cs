@@ -53,5 +53,18 @@ namespace HIV.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
+
+        [HttpGet("{id}/arv-details")]
+        public async Task<IActionResult> GetARVDetails(int id)
+        {
+            var details = await _service.GetARVDetailsByProtocolIdAsync(id);
+
+            if (details == null || !details.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(details);
+        }
     }
 }

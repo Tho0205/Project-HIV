@@ -39,10 +39,15 @@ namespace HIV.Repository
 
         public async Task<BlogDto> CreateBlogAsync(BlogDto blogDto)
         {
-            var blog = _mapper.Map<Blog>(blogDto);
-            blog.AuthorId = blogDto.AuthorId;
-            blog.IsApproved = false;
-            blog.CreatedAt = DateTime.Now;
+            var blog = new Blog
+            {
+                Title = blogDto.Title,
+                Content = blogDto.Content,
+                ImageUrl = blogDto.ImageUrl, 
+                AuthorId = blogDto.AuthorId,
+                IsApproved = false,
+                CreatedAt = DateTime.Now
+            };
 
             _context.Blogs.Add(blog);
             await _context.SaveChangesAsync();
@@ -58,6 +63,7 @@ namespace HIV.Repository
 
             existingBlog.Title = blogDto.Title;
             existingBlog.Content = blogDto.Content;
+            existingBlog.ImageUrl = blogDto.ImageUrl; 
             existingBlog.IsApproved = false;
             existingBlog.CreatedAt = DateTime.Now;
 
