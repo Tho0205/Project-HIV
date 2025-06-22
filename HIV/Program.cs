@@ -38,6 +38,7 @@ namespace HIV
             builder.Services.AddScoped(typeof(ICommonOperation<>), typeof(CommonOperation<>));
 
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+            builder.Services.AddScoped<IAdminManagementAccount, AdminAccountService>();
 
             builder.Services.AddScoped<IBlogService, BlogService>();
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
