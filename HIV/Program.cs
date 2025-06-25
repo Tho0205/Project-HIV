@@ -59,7 +59,7 @@ namespace HIV
                 options.AddPolicy("AllowReact", policy =>
                 {
                     policy.WithOrigins(
-                            "http://localhost:3000") 
+                            "http://localhost:3000", "https://localhost:3000") 
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
