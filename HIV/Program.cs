@@ -1,12 +1,16 @@
-﻿using HIV.Models;
-using Microsoft.EntityFrameworkCore;
-using HIV.Interfaces;
-using HIV.Repository;
-using System;
-using DemoSWP391.Services;
-using HIV.Interfaces.ARVinterfaces;
-using Microsoft.Extensions.FileProviders;
+﻿using DemoSWP391.Services;
 using HIV.Hubs;
+using HIV.Interfaces;
+using HIV.Interfaces.ARVinterfaces;
+using HIV.Models;
+using HIV.Repository;
+using HIV.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Text;
 
 
 namespace HIV
@@ -27,12 +31,71 @@ namespace HIV
             //App Automapper
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+            // cấu hình jwt
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretkey = jwtSettings["SecretKey"];
+
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretkey)),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings["Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            builder.Services.AddAuthorization();
+
             // Add services to the container.
             builder.Services.AddControllers();
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "HIV API",
+                    Version = "v1"
+                });
+
+                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "Nhập JWT token vào đây: Bearer {your token}"
+                });
+
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+            });
+
 
             //Adding the repository and service layer
             builder.Services.AddScoped(typeof(ICommonOperation<>), typeof(CommonOperation<>));
@@ -53,13 +116,14 @@ namespace HIV
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             builder.Services.AddScoped<IDoctorMangamentPatient, DoctorPatientService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<IJwtService, JWTService>();
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReact", policy =>
                 {
                     policy.WithOrigins(
-                            "http://localhost:3000") 
+                            "http://localhost:3000", "https://localhost:3000")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
@@ -106,6 +170,7 @@ namespace HIV
             app.UseCors("AllowReact");
 
 
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
             app.MapHub<ChatHub>("/chathub");
