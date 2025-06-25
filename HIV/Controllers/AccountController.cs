@@ -1,5 +1,6 @@
 ﻿
 using HIV.DTOs;
+using HIV.Interfaces;
 using HIV.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 
@@ -19,14 +21,28 @@ namespace WebAPITest.Controllers
     {
 
         private readonly AppDbContext _context;
+        private readonly IJwtService _jwtService;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
+        }
+
+        private int GetCurrentUserId()
+        {
+            var accountIdClaim = User.FindFirst("AccountId")?.Value;
+            return int.TryParse(accountIdClaim, out var accountId) ? accountId : 0;
+        }
+
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirst(ClaimTypes.Role)?.Value ?? "";
         }
 
         // GET: api/Account
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
         {
             return await _context.Accounts.ToListAsync();
@@ -49,14 +65,27 @@ namespace WebAPITest.Controllers
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
 
+            var token = _jwtService.GenerateToken(
+                user?.FullName ?? "Unknown",
+                user?.Role ?? "Unknown",
+                user?.UserId ?? 0,
+                account.AccountId,
+                user?.UserAvatar ?? "Unknown"
+              );
+
             return Ok(new
             {
                 //trả về 1 chuổi kiểu if else nếu đùng thì trả về fullname còn sai thì trả về Unknown
-                fullName = user?.FullName ?? "Unknown",
-                role = user?.Role ?? "Unknown",
-                accountid = account.AccountId,
-                user_avatar = user?.UserAvatar ?? "Unknown",
-                userid = account.User.UserId
+                //fullName = user?.FullName ?? "Unknown",
+                //role = user?.Role ?? "Unknown",
+                //accountid = account.AccountId,
+                //user_avatar = user?.UserAvatar ?? "Unknown",
+                //userid = account.User.UserId,
+                // trả về 1 token
+                token = token, 
+                expires = DateTime.UtcNow.AddMinutes(30),
+                success = true,
+                message = "Login successful"
             });
         }
 
@@ -111,8 +140,10 @@ namespace WebAPITest.Controllers
 
         // GET: api/Account/
         [HttpGet("{id}")]
+        [Authorize(Roles = "Patient,Staff")]
         public async Task<ActionResult<DTOGetbyID>> GetAccountById(int id)
         {
+
             var account = await _context.Accounts
                 .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
@@ -141,12 +172,15 @@ namespace WebAPITest.Controllers
         }
 
         [HttpPut("Update/{id}")]
+        [Authorize]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
 
         public async Task<ActionResult<DTOUpdate>> UpdateInfo(int id, [FromBody] DTOUpdate updateinfo)
         {
+
+
             var account = await _context.Accounts
                 .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
@@ -168,11 +202,13 @@ namespace WebAPITest.Controllers
 
 
         [HttpPut("ChangePass/{id}")]
+        [Authorize]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePassword changepass)
         {
+
             var account = await _context.Accounts
                 .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
@@ -190,7 +226,9 @@ namespace WebAPITest.Controllers
 
         [HttpPost("UploadAvatar/{accountId}")]
         public async Task<IActionResult> UploadAvatar(int accountId, IFormFile avatar)
+
         {
+
             if (avatar == null || avatar.Length == 0)
                 return BadRequest("No file uploaded.");
 
@@ -255,6 +293,31 @@ namespace WebAPITest.Controllers
             return PhysicalFile(filePath, contentType);
         }
 
+        [HttpPost("refresh-token")]
+        [Authorize]
+        public async Task<ActionResult<object>> RefreshToken()
+        {
+            var currentUserId = GetCurrentUserId();
+            var account = await _context.Accounts
+                .Include(a => a.User)
+                .FirstOrDefaultAsync(a => a.AccountId == currentUserId);
 
+            if (account == null)
+                return NotFound();
+
+            var newtoken = _jwtService.GenerateToken(
+              account.User?.FullName ?? "Unknown",
+              account.User?.Role ?? "Unknown",
+              account.User?.UserId ?? 0,
+              account.AccountId,
+              account.User?.UserAvatar ?? "Unknown"
+            );
+
+            return Ok(new
+            {
+                token = newtoken,
+                expires = DateTime.UtcNow.AddMinutes(60)
+            });
+        }
     }
 }
