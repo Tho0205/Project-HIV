@@ -68,5 +68,77 @@ namespace HIV.Controllers
 
             return Ok(details);
         }
+        //-----------------------------------------------------------------------------------------
+        [HttpPost("create-with-details")]
+        public async Task<IActionResult> CreateWithDetails([FromBody] CreateARVProtocolWithDetailsDto dto)
+        {
+            var result = await _service.CreateWithDetailsAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { errors = result.Errors });
+            }
+
+            return CreatedAtAction(
+                nameof(GetFullProtocol),
+                new { id = result.Data.ProtocolId },
+                result.Data);
+        }
+
+        [HttpPost("{id}/add-details")]
+        public async Task<IActionResult> AddDetails(int id, [FromBody] List<CreateARVProtocolDetailDto> details)
+        {
+            var result = await _service.AddDetailsToProtocolAsync(id, details);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { errors = result.Errors });
+            }
+
+            return Ok(result.Data);
+        }
+
+        [HttpPut("{protocolId}/details/{detailId}")]
+        public async Task<IActionResult> UpdateDetail(
+            int protocolId,
+            int detailId,
+            [FromBody] CreateARVProtocolDetailDto dto)
+        {
+            var result = await _service.UpdateProtocolDetailAsync(protocolId, detailId, dto);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { errors = result.Errors });
+            }
+
+            return Ok(result.Data);
+        }
+
+        [HttpDelete("{protocolId}/details/{detailId}")]
+        public async Task<IActionResult> RemoveDetail(int protocolId, int detailId)
+        {
+            var result = await _service.RemoveDetailFromProtocolAsync(protocolId, detailId);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { errors = result.Errors });
+            }
+
+            return Ok(new { success = true, message = "Đã xoá ARV khỏi protocol" });
+        }
+
+        [HttpGet("{id}/full")]
+        public async Task<IActionResult> GetFullProtocol(int id)
+        {
+            var result = await _service.GetFullProtocolByIdAsync(id);
+
+            if (!result.IsSuccess)
+            {
+                return NotFound(new { errors = result.Errors });
+            }
+
+            return Ok(result.Data);
+        }
     }
 }
+    

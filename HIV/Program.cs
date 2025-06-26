@@ -49,8 +49,6 @@ namespace HIV
 
             builder.Services.AddScoped<IARVProtocolService, ARVProtocolService>();
 
-            builder.Services.AddScoped<IARVProtocolDetailService, ARVProtocolDetailService>();
-
             builder.Services.AddScoped<ICustomizedArvProtocolService, CustomizedArvProtocolService>();
 
             builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
