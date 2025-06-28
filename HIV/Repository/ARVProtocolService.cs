@@ -2,6 +2,10 @@
 using HIV.Interfaces.ARVinterfaces;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace HIV.Repository
 {
@@ -17,77 +21,191 @@ namespace HIV.Repository
         public async Task<IEnumerable<ARVProtocolDto>> GetAllAsync()
         {
             return await _context.ARVProtocols
-                .Select(x => new ARVProtocolDto
+                .Where(p => p.Status != "DELETED")
+                .Select(p => new ARVProtocolDto
                 {
-                    ProtocolId = x.ProtocolId,
-                    Name = x.Name,
-                    Description = x.Description,
-                    Status = x.Status
+                    ProtocolId = p.ProtocolId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Status = p.Status
                 })
                 .ToListAsync();
         }
 
-        public async Task<ARVProtocolDto?> GetByIdAsync(int id)
+        public async Task<ServiceResult<ARVProtocolDto>> GetFullProtocolByIdAsync(int id)
         {
-            var x = await _context.ARVProtocols.FindAsync(id);
-            if (x == null) return null;
-
-            return new ARVProtocolDto
+            try
             {
-                ProtocolId = x.ProtocolId,
-                Name = x.Name,
-                Description = x.Description,
-                Status = x.Status
-            };
-        }
+                var protocol = await _context.ARVProtocols
+                    .Include(p => p.Details)
+                    .ThenInclude(d => d.Arv)
+                    .FirstOrDefaultAsync(p => p.ProtocolId == id && p.Status != "DELETED");
 
-        public async Task<IEnumerable<ARVProDetailDto>> GetARVDetailsByProtocolIdAsync(int protocolId)
-        {
-            return await _context.ARVProtocolDetails
-                .Where(d => d.ProtocolId == protocolId && d.Status == "ACTIVE")
-                .Include(d => d.Arv)
-                .Select(d => new ARVProDetailDto
+                if (protocol == null)
+                    return ServiceResult<ARVProtocolDto>.Failure("Không tìm thấy protocol");
+
+                var result = new ARVProtocolDto
                 {
-                    ArvId = d.ArvId,
-                    ArvName = d.Arv.Name,
-                    Dosage = d.Dosage,
-                    UsageInstruction = d.UsageInstruction
-                })
-                .ToListAsync();
+                    ProtocolId = protocol.ProtocolId,
+                    Name = protocol.Name,
+                    Description = protocol.Description,
+                    Status = protocol.Status,
+                    Details = protocol.Details
+                        .Where(d => d.Status == "ACTIVE")
+                        .Select(d => new ARVProDetailDto
+                        {
+                            DetailId = d.Id,
+                            ArvId = d.ArvId,
+                            ArvName = d.Arv?.Name,
+                            Dosage = d.Dosage,
+                            UsageInstruction = d.UsageInstruction,
+                            Status = d.Status
+                        }).ToList()
+                };
+
+                return ServiceResult<ARVProtocolDto>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi lấy dữ liệu: {ex.Message}");
+            }
         }
 
-        public async Task<ARVProtocolDto> CreateAsync(CreateARVProtocolDto dto)
+        public async Task<ServiceResult<ARVProtocolDto>> CreateWithDetailsAsync(CreateARVProtocolWithDetailsDto dto)
         {
-            var entity = new ARVProtocol
+            try
             {
-                Name = dto.Name,
-                Description = dto.Description,
-                Status = dto.Status
-            };
+                // Validate input
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    return ServiceResult<ARVProtocolDto>.Failure("Tên protocol không được để trống");
 
-            _context.ARVProtocols.Add(entity);
-            await _context.SaveChangesAsync();
+                if (await _context.ARVProtocols.AnyAsync(p => p.Name == dto.Name))
+                    return ServiceResult<ARVProtocolDto>.Failure("Tên protocol đã tồn tại");
 
-            return new ARVProtocolDto
+                if (dto.Details == null || !dto.Details.Any())
+                    return ServiceResult<ARVProtocolDto>.Failure("Protocol phải có ít nhất một ARV");
+
+                // Validate ARVs
+                var arvIds = dto.Details.Select(d => d.ArvId).Distinct().ToList();
+                var existingArvs = await _context.ARVs
+                    .Where(a => arvIds.Contains(a.ArvId))
+                    .Select(a => a.ArvId)
+                    .ToListAsync();
+
+                var invalidArvIds = arvIds.Except(existingArvs).ToList();
+                if (invalidArvIds.Any())
+                    return ServiceResult<ARVProtocolDto>.Failure($"Không tìm thấy ARV với ID: {string.Join(", ", invalidArvIds)}");
+
+                // Create new protocol
+                var protocol = new ARVProtocol
+                {
+                    Name = dto.Name.Trim(),
+                    Description = dto.Description?.Trim(),
+                    Status = dto.Status,
+                    Details = dto.Details.Select(d => new ARVProtocolDetail
+                    {
+                        ArvId = d.ArvId,
+                        Dosage = d.Dosage.Trim(),
+                        UsageInstruction = d.UsageInstruction?.Trim(),
+                        Status = "ACTIVE"
+                    }).ToList()
+                };
+
+                _context.ARVProtocols.Add(protocol);
+                await _context.SaveChangesAsync();
+
+                // Return result
+                var result = new ARVProtocolDto
+                {
+                    ProtocolId = protocol.ProtocolId,
+                    Name = protocol.Name,
+                    Description = protocol.Description,
+                    Status = protocol.Status,
+                    Details = protocol.Details.Select(d => new ARVProDetailDto
+                    {
+                        DetailId = d.Id,
+                        ArvId = d.ArvId,
+                        ArvName = d.Arv?.Name,
+                        Dosage = d.Dosage,
+                        UsageInstruction = d.UsageInstruction,
+                        Status = d.Status
+                    }).ToList()
+                };
+
+                return ServiceResult<ARVProtocolDto>.Success(result);
+            }
+            catch (Exception ex)
             {
-                ProtocolId = entity.ProtocolId,
-                Name = entity.Name,
-                Description = entity.Description,
-                Status = entity.Status
-            };
+                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi tạo protocol: {ex.Message}");
+            }
         }
 
-        public async Task<bool> UpdateAsync(int id, UpdateARVProtocolDto dto)
+        public async Task<ServiceResult<ARVProtocolDto>> UpdateProtocolWithDetailsAsync(int protocolId, UpdateARVProtocolWithDetailsDto dto)
         {
-            var entity = await _context.ARVProtocols.FindAsync(id);
-            if (entity == null) return false;
+            try
+            {
+                // Get existing protocol
+                var protocol = await _context.ARVProtocols
+                    .Include(p => p.Details)
+                    .FirstOrDefaultAsync(p => p.ProtocolId == protocolId && p.Status != "DELETED");
 
-            entity.Name = dto.Name;
-            entity.Description = dto.Description;
-            entity.Status = dto.Status;
+                if (protocol == null)
+                    return ServiceResult<ARVProtocolDto>.Failure("Không tìm thấy protocol");
 
-            await _context.SaveChangesAsync();
-            return true;
+                // Update protocol info
+                protocol.Name = dto.Name;
+                protocol.Description = dto.Description;
+                protocol.Status = dto.Status;
+
+                // Process details
+                var existingDetailIds = protocol.Details.Select(d => d.Id).ToList();
+                var updatedDetailIds = dto.Details.Where(d => d.DetailId > 0).Select(d => d.DetailId).ToList();
+
+                // Remove details not in update list
+                var detailsToRemove = protocol.Details
+                    .Where(d => !updatedDetailIds.Contains(d.Id))
+                    .ToList();
+
+                foreach (var detail in detailsToRemove)
+                {
+                    detail.Status = "INACTIVE";
+                }
+
+                // Update or add details
+                foreach (var detailDto in dto.Details)
+                {
+                    if (detailDto.DetailId > 0) // Update existing
+                    {
+                        var detail = protocol.Details.FirstOrDefault(d => d.Id == detailDto.DetailId);
+                        if (detail != null)
+                        {
+                            detail.ArvId = detailDto.ArvId;
+                            detail.Dosage = detailDto.Dosage;
+                            detail.UsageInstruction = detailDto.UsageInstruction;
+                            detail.Status = detailDto.Status;
+                        }
+                    }
+                    else // Add new
+                    {
+                        protocol.Details.Add(new ARVProtocolDetail
+                        {
+                            ArvId = detailDto.ArvId,
+                            Dosage = detailDto.Dosage,
+                            UsageInstruction = detailDto.UsageInstruction,
+                            Status = detailDto.Status
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Return updated protocol
+                return await GetFullProtocolByIdAsync(protocolId);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi cập nhật protocol: {ex.Message}");
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -100,144 +218,60 @@ namespace HIV.Repository
             return true;
         }
 
-        public async Task<ServiceResult<ARVProtocolDto>> CreateWithDetailsAsync(CreateARVProtocolWithDetailsDto dto)
+        public async Task<ServiceResult<ARVProDetailDto>> AddSingleARVToProtocolAsync(int protocolId, AddARVToProtocolDto dto)
         {
             try
             {
-                // Validate protocol name
-                if (string.IsNullOrWhiteSpace(dto.Name))
-                    return ServiceResult<ARVProtocolDto>.Failure("Tên protocol không được để trống");
-
-                // Check duplicate protocol name
-                if (await _context.ARVProtocols.AnyAsync(p => p.Name == dto.Name))
-                    return ServiceResult<ARVProtocolDto>.Failure("Tên protocol đã tồn tại");
-
-                // Validate details
-                if (dto.Details == null || !dto.Details.Any())
-                    return ServiceResult<ARVProtocolDto>.Failure("Protocol phải có ít nhất một ARV");
-
-                // Check ARV exists
-                var arvIds = dto.Details.Select(d => d.ArvId).Distinct().ToList();
-                var existingArvs = await _context.ARVs
-                    .Where(a => arvIds.Contains(a.ArvId))
-                    .Select(a => a.ArvId)
-                    .ToListAsync();
-
-                var invalidArvIds = arvIds.Except(existingArvs).ToList();
-                if (invalidArvIds.Any())
-                    return ServiceResult<ARVProtocolDto>.Failure($"Không tìm thấy ARV với ID: {string.Join(", ", invalidArvIds)}");
-
-                // Create new protocol with details
-                var protocol = new ARVProtocol
-                {
-                    Name = dto.Name.Trim(),
-                    Description = dto.Description?.Trim(),
-                    Status = dto.Status,
-                    Details = dto.Details.Select(d => new ARVProtocolDetail
-                    {
-                        ArvId = d.ArvId,
-                        Dosage = d.Dosage.Trim(),
-                        UsageInstruction = d.UsageInstruction?.Trim(),
-                        Status = d.Status
-                    }).ToList()
-                };
-
-                _context.ARVProtocols.Add(protocol);
-                await _context.SaveChangesAsync();
-
-                // Return result with details
-                var result = new ARVProtocolDto
-                {
-                    ProtocolId = protocol.ProtocolId,
-                    Name = protocol.Name,
-                    Description = protocol.Description,
-                    Status = protocol.Status,
-                    Details = protocol.Details.Select(d => new ARVProDetailDto
-                    {
-                        ArvId = d.ArvId,
-                        ArvName = d.Arv?.Name,
-                        Dosage = d.Dosage,
-                        UsageInstruction = d.UsageInstruction
-                    }).ToList()
-                };
-
-                return ServiceResult<ARVProtocolDto>.Success(result);
-            }
-            catch (Exception ex)
-            {
-                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi tạo protocol: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult<ARVProtocolDto>> AddDetailsToProtocolAsync(int protocolId, List<CreateARVProtocolDetailDto> details)
-        {
-            try
-            {
-                // Get protocol with details
-                var protocol = await _context.ARVProtocols
-                    .Include(p => p.Details)
-                    .FirstOrDefaultAsync(p => p.ProtocolId == protocolId);
-
+                // Validate protocol exists
+                var protocol = await _context.ARVProtocols.FindAsync(protocolId);
                 if (protocol == null)
-                    return ServiceResult<ARVProtocolDto>.Failure("Không tìm thấy protocol");
+                    return ServiceResult<ARVProDetailDto>.Failure("Không tìm thấy protocol");
 
-                // Validate details
-                if (details == null || !details.Any())
-                    return ServiceResult<ARVProtocolDto>.Failure("Danh sách ARV không được trống");
+                // Validate ARV exists
+                var arv = await _context.ARVs.FindAsync(dto.ArvId);
+                if (arv == null)
+                    return ServiceResult<ARVProDetailDto>.Failure("Không tìm thấy ARV");
 
-                // Check ARV exists
-                var arvIds = details.Select(d => d.ArvId).Distinct().ToList();
-                var existingArvs = await _context.ARVs
-                    .Where(a => arvIds.Contains(a.ArvId))
-                    .Select(a => a.ArvId)
-                    .ToListAsync();
-
-                var invalidArvIds = arvIds.Except(existingArvs).ToList();
-                if (invalidArvIds.Any())
-                    return ServiceResult<ARVProtocolDto>.Failure($"Không tìm thấy ARV với ID: {string.Join(", ", invalidArvIds)}");
-
-                // Add new details
-                foreach (var detailDto in details)
+                // Create new detail
+                var newDetail = new ARVProtocolDetail
                 {
-                    protocol.Details.Add(new ARVProtocolDetail
-                    {
-                        ArvId = detailDto.ArvId,
-                        Dosage = detailDto.Dosage.Trim(),
-                        UsageInstruction = detailDto.UsageInstruction?.Trim(),
-                        Status = detailDto.Status
-                    });
-                }
-
-                await _context.SaveChangesAsync();
-
-                // Return updated protocol
-                var result = new ARVProtocolDto
-                {
-                    ProtocolId = protocol.ProtocolId,
-                    Name = protocol.Name,
-                    Description = protocol.Description,
-                    Status = protocol.Status,
-                    Details = protocol.Details.Select(d => new ARVProDetailDto
-                    {
-                        ArvId = d.ArvId,
-                        ArvName = d.Arv?.Name,
-                        Dosage = d.Dosage,
-                        UsageInstruction = d.UsageInstruction
-                    }).ToList()
+                    ProtocolId = protocolId,
+                    ArvId = dto.ArvId,
+                    Dosage = dto.Dosage,
+                    UsageInstruction = dto.UsageInstruction,
+                    Status = dto.Status
                 };
 
-                return ServiceResult<ARVProtocolDto>.Success(result);
+                _context.ARVProtocolDetails.Add(newDetail);
+                await _context.SaveChangesAsync();
+
+                // Return result
+                var result = new ARVProDetailDto
+                {
+                    DetailId = newDetail.Id,
+                    ArvId = newDetail.ArvId,
+                    ArvName = arv.Name,
+                    Dosage = newDetail.Dosage,
+                    UsageInstruction = newDetail.UsageInstruction,
+                    Status = newDetail.Status
+                };
+
+                return ServiceResult<ARVProDetailDto>.Success(result);
             }
             catch (Exception ex)
             {
-                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi thêm ARV: {ex.Message}");
+                return ServiceResult<ARVProDetailDto>.Failure($"Lỗi khi thêm ARV: {ex.Message}");
             }
         }
 
-        public async Task<ServiceResult<ARVProDetailDto>> UpdateProtocolDetailAsync(int protocolId, int detailId, CreateARVProtocolDetailDto dto)
+        public async Task<ServiceResult<ARVProDetailDto>> UpdateProtocolDetailAsync(int protocolId, int detailId, UpdateARVProtocolDetailDto dto)
         {
             try
             {
+                // Validate IDs
+                if (protocolId <= 0 || detailId <= 0 || dto.DetailId != detailId)
+                    return ServiceResult<ARVProDetailDto>.Failure("ID không hợp lệ");
+
                 // Get protocol detail
                 var detail = await _context.ARVProtocolDetails
                     .Include(d => d.Arv)
@@ -253,8 +287,8 @@ namespace HIV.Repository
 
                 // Update detail
                 detail.ArvId = dto.ArvId;
-                detail.Dosage = dto.Dosage.Trim();
-                detail.UsageInstruction = dto.UsageInstruction?.Trim();
+                detail.Dosage = dto.Dosage;
+                detail.UsageInstruction = dto.UsageInstruction;
                 detail.Status = dto.Status;
 
                 await _context.SaveChangesAsync();
@@ -262,11 +296,12 @@ namespace HIV.Repository
                 // Return updated detail
                 var result = new ARVProDetailDto
                 {
+                    DetailId = detail.Id,
                     ArvId = detail.ArvId,
                     ArvName = detail.Arv?.Name,
                     Dosage = detail.Dosage,
                     UsageInstruction = detail.UsageInstruction,
-                    DetailId = detail.Id
+                    Status = detail.Status
                 };
 
                 return ServiceResult<ARVProDetailDto>.Success(result);
@@ -277,7 +312,7 @@ namespace HIV.Repository
             }
         }
 
-        public async Task<ServiceResult<bool>> RemoveDetailFromProtocolAsync(int protocolId, int detailId)
+        public async Task<ServiceResult<bool>> HardRemoveDetailFromProtocolAsync(int protocolId, int detailId)
         {
             try
             {
@@ -287,7 +322,7 @@ namespace HIV.Repository
                 if (detail == null)
                     return ServiceResult<bool>.Failure("Không tìm thấy chi tiết protocol");
 
-                detail.Status = "INACTIVE";
+                _context.ARVProtocolDetails.Remove(detail);
                 await _context.SaveChangesAsync();
 
                 return ServiceResult<bool>.Success(true);
@@ -298,43 +333,30 @@ namespace HIV.Repository
             }
         }
 
-        public async Task<ServiceResult<ARVProtocolDto>> GetFullProtocolByIdAsync(int id)
+        public async Task<ServiceResult<List<ARVProDetailDto>>> GetProtocolActiveDetailsAsync(int protocolId)
         {
             try
             {
-                var protocol = await _context.ARVProtocols
-                    .Include(p => p.Details)
-                        .ThenInclude(d => d.Arv)
-                    .FirstOrDefaultAsync(p => p.ProtocolId == id);
+                var details = await _context.ARVProtocolDetails
+                    .Where(d => d.ProtocolId == protocolId && d.Status == "ACTIVE")
+                    .Include(d => d.Arv)
+                    .Select(d => new ARVProDetailDto
+                    {
+                        DetailId = d.Id,
+                        ArvId = d.ArvId,
+                        ArvName = d.Arv.Name,
+                        Dosage = d.Dosage,
+                        UsageInstruction = d.UsageInstruction,
+                        Status = d.Status
+                    })
+                    .ToListAsync();
 
-                if (protocol == null)
-                    return ServiceResult<ARVProtocolDto>.Failure("Không tìm thấy protocol");
-
-                var result = new ARVProtocolDto
-                {
-                    ProtocolId = protocol.ProtocolId,
-                    Name = protocol.Name,
-                    Description = protocol.Description,
-                    Status = protocol.Status,
-                    Details = protocol.Details
-                        .Where(d => d.Status == "ACTIVE")
-                        .Select(d => new ARVProDetailDto
-                        {
-                            ArvId = d.ArvId,
-                            ArvName = d.Arv?.Name,
-                            Dosage = d.Dosage,
-                            UsageInstruction = d.UsageInstruction,
-                            DetailId = d.Id
-                        }).ToList()
-                };
-
-                return ServiceResult<ARVProtocolDto>.Success(result);
+                return ServiceResult<List<ARVProDetailDto>>.Success(details);
             }
             catch (Exception ex)
             {
-                return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi lấy dữ liệu: {ex.Message}");
+                return ServiceResult<List<ARVProDetailDto>>.Failure($"Lỗi khi lấy danh sách: {ex.Message}");
             }
         }
     }
-
 }
