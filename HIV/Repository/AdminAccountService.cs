@@ -19,7 +19,6 @@ namespace DemoSWP391.Services
         {
             return await _context.Accounts
                 .Include(a => a.User)
-                .OrderByDescending(a => a.CreatedAt)
                 .ToListAsync();
         }
 
