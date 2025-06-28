@@ -20,19 +20,19 @@ namespace HIV.Repository
         {
             return await _context.Users
                         .Include(u => u.Schedules)
-                        .Where(u => u.Role == "doctor")
+                        .Where(u => u.Role == "Doctor")
                         .Select(u => u.ToUserTableDTO())
                         .ToListAsync();
         }
 
         public async Task<List<ScheduleSimpleDTO>> GetScheduleOfDoctor(int id_doctor)
         {
-            return await _context.Schedules.Where(u => u.DoctorId == id_doctor && u.Status == "Available").Select(u => new ScheduleSimpleDTO
+            return await _context.Schedules.Where(u => u.DoctorId == id_doctor && u.Status.Equals("ACTIVE")).Select(u => new ScheduleSimpleDTO
             {
                 ScheduleId = u.ScheduleId,
                 ScheduledTime = u.ScheduledTime,
                 Room = u.Room,
-                Status = u.Status
+                //status = u.Status
             }).ToListAsync();
 
         }
@@ -60,7 +60,8 @@ namespace HIV.Repository
                 DoctorId = dto.doctorId,
                 Note = dto.Note,
                 IsAnonymous = (bool)dto.IsAnonymous,
-                Status = "Pending",
+                Status = "CONFIRMED",
+                //Status = "Pending",
                 CreatedAt = DateTime.Now,
                 AppointmentDate = dto.AppointmentDate
             };
@@ -70,7 +71,8 @@ namespace HIV.Repository
             var sche = await _context.Schedules.FindAsync(appoint.ScheduleId);
             if (sche != null)
             {
-                sche.Status = "Booked";
+                //sche.Status = "Booked";
+                sche.Status = "ACTIVE";
             }
             await _context.SaveChangesAsync();
             return dto;

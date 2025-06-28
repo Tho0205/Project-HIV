@@ -1,6 +1,7 @@
 ﻿
 using HIV.DTOs;
 using HIV.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -38,6 +39,7 @@ namespace HIV.Controllers
         }
 
         [HttpPost("create")]
+        [Authorize(Roles = "Patient,Doctor")]
         public async Task<IActionResult> CreateBlog([FromBody] BlogDto blogDto)
         {
             if (blogDto == null)
@@ -49,6 +51,7 @@ namespace HIV.Controllers
         }
 
         [HttpPut("update")]
+        [Authorize(Roles = "Patient,Doctor")]
         public async Task<IActionResult> UpdateBlog(int id, [FromBody] BlogDto blogDto)
         {
             if (blogDto == null )
@@ -64,6 +67,7 @@ namespace HIV.Controllers
         }
 
         [HttpPut("approve/{id}")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> ApproveBlog(int id)
         {
             var approvedBlog = await _blogService.ApproveBlogAsync(id);
@@ -75,6 +79,7 @@ namespace HIV.Controllers
         }
 
         [HttpDelete("delete/{id}")]
+        [Authorize(Roles = "Doctor,Patient,Staff,Manager")]
         public async Task<IActionResult> DeleteBlog(int id)
         {
             var isDeleted = await _blogService.DeleteBlogAsync(id);
