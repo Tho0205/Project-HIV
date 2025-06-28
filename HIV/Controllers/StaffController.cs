@@ -1,4 +1,5 @@
 ﻿using HIV.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("Patient")]
+        [Authorize(Roles = "Staff, Manager")]
         public async Task<ActionResult<IEnumerable<DTOGetPatient>>> GetAllPatient(
             string sortBy = "full_name",
             string order = "asc",
@@ -72,6 +74,7 @@ namespace HIV.Controllers
 
 
         [HttpPut("Staff-Update/{id}")]
+        [Authorize(Roles = "Staff, Manager")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

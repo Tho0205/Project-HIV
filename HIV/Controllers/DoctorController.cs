@@ -1,6 +1,7 @@
 ﻿using HIV.DTOs.DoctorPatient;
 using HIV.Interfaces;
 using HIV.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -24,6 +25,7 @@ namespace HIV.Controllers
         /// Lấy danh sách bệnh nhân được phân công cho doctor
         /// </summary>
         [HttpGet("Patients")]
+        [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(DoctorPatientsResponseDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
@@ -65,6 +67,7 @@ namespace HIV.Controllers
         /// Cập nhật thông tin bệnh nhân
         /// </summary>
         [HttpPut("UpdatePatient/{accountId}")]
+        [Authorize(Roles = "Doctor")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
@@ -120,6 +123,7 @@ namespace HIV.Controllers
         /// Lấy thống kê bệnh nhân của doctor
         /// </summary>
         [HttpGet("PatientStats/{doctorId}")]
+        [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(DoctorPatientStatsDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
@@ -151,6 +155,7 @@ namespace HIV.Controllers
         /// Lấy lịch sử khám bệnh của bệnh nhân với doctor hiện tại
         /// </summary>
         [HttpGet("PatientHistory/{patientId}")]
+        [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(PatientHistoryDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(403)]
@@ -192,6 +197,7 @@ namespace HIV.Controllers
         /// Lấy chi tiết một bệnh nhân cụ thể
         /// </summary>
         [HttpGet("PatientDetail/{patientId}")]
+        [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(DoctorPatientListDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(403)]

@@ -42,7 +42,7 @@ namespace WebAPITest.Controllers
 
         // GET: api/Account
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
         {
             return await _context.Accounts.ToListAsync();
@@ -140,7 +140,7 @@ namespace WebAPITest.Controllers
 
         // GET: api/Account/
         [HttpGet("{id}")]
-        [Authorize(Roles = "Patient,Staff")]
+        [Authorize(Roles = "Patient")]
         public async Task<ActionResult<DTOGetbyID>> GetAccountById(int id)
         {
 
@@ -172,7 +172,7 @@ namespace WebAPITest.Controllers
         }
 
         [HttpPut("Update/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Patient")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -202,7 +202,7 @@ namespace WebAPITest.Controllers
 
 
         [HttpPut("ChangePass/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Patient")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
