@@ -50,5 +50,13 @@ namespace HIV.Controllers
             var success = await _service.DeleteAsync(id);
             return success ? NoContent() : NotFound();
         }
+
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActiveDoctors()
+        {
+            var data = await _service.GetAllAsync();
+            var activeDoctors = data.Where(d => d.Status == "ACTIVE");
+            return Ok(activeDoctors);
+        }
     }
 }

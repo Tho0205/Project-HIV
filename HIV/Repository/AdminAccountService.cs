@@ -41,7 +41,7 @@ namespace DemoSWP391.Services
         public async Task<Account> CreateAccountAsync(Account account)
         {
             // Hash password trước khi lưu
-            account.PasswordHash = HashPassword(account.PasswordHash);
+            //account.PasswordHash = HashPassword(account.PasswordHash);
             account.CreatedAt = DateTime.UtcNow;
 
             _context.Accounts.Add(account);
@@ -81,7 +81,8 @@ namespace DemoSWP391.Services
             // Cập nhật password nếu có
             if (!string.IsNullOrEmpty(account.PasswordHash))
             {
-                existingAccount.PasswordHash = HashPassword(account.PasswordHash);
+                //existingAccount.PasswordHash = HashPassword(account.PasswordHash);
+                existingAccount.PasswordHash = account.PasswordHash;
             }
 
             // Cập nhật role
