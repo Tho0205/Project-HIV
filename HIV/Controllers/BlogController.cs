@@ -1,6 +1,7 @@
 ﻿
 using HIV.DTOs;
 using HIV.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers

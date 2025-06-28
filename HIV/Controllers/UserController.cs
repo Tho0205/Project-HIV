@@ -3,6 +3,7 @@ using HIV.Models;
 using HIV.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HIV.Controllers
 {
@@ -27,6 +28,7 @@ namespace HIV.Controllers
 
         // THÊM ENDPOINT MỚI CHO FRONTEND
         [HttpGet("patients-with-appointments")]
+        [Authorize]
         public async Task<IActionResult> GetPatientsWithAppointments()
         {
             try
@@ -76,6 +78,7 @@ namespace HIV.Controllers
 
         // THÊM ENDPOINT LẤY CHI TIẾT USER
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetUserById(int id)
         {
             try

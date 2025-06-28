@@ -1,6 +1,7 @@
 ﻿
 using DemoSWP391.Services;
 using HIV.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -20,6 +21,7 @@ namespace HIV.Controllers
         /// Lấy lịch làm việc của bác sĩ (Doctor Feature)
         /// </summary>
         [HttpGet("doctor/{doctorId}")]
+        [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<List<ScheduleDto>>>> GetDoctorSchedules(
             int doctorId,
             [FromQuery] DateTime? fromDate = null,
@@ -40,6 +42,7 @@ namespace HIV.Controllers
         /// Lấy chi tiết một lịch làm việc
         /// </summary>
         [HttpGet("{scheduleId}")]
+        [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<ScheduleDto>>> GetScheduleById(int scheduleId)
         {
             try
@@ -60,6 +63,7 @@ namespace HIV.Controllers
         /// Tạo lịch làm việc mới (Doctor Feature)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<ScheduleDto>>> CreateSchedule([FromBody] CreateScheduleDto dto)
         {
             try
@@ -84,6 +88,7 @@ namespace HIV.Controllers
         /// Cập nhật lịch làm việc (Doctor Feature)
         /// </summary>
         [HttpPut("{scheduleId}")]
+        [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<ScheduleDto>>> UpdateSchedule(int scheduleId, [FromBody] UpdateScheduleDto dto)
         {
             try
@@ -110,6 +115,7 @@ namespace HIV.Controllers
         /// Xóa lịch làm việc (Doctor Feature)
         /// </summary>
         [HttpDelete("{scheduleId}")]
+        [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteSchedule(int scheduleId)
         {
             try
@@ -130,6 +136,7 @@ namespace HIV.Controllers
         /// Lấy danh sách lịch trống (Patient/Staff Feature)
         /// </summary>
         [HttpGet("available")]
+        [Authorize(Roles = "Patient,Staff")]
         public async Task<ActionResult<ApiResponse<List<ScheduleDto>>>> GetAvailableSchedules([FromQuery] DateTime? date = null)
         {
             try

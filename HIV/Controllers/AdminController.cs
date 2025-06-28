@@ -3,6 +3,7 @@ using DemoSWP391.Services;
 using HIV.DTOs;
 using HIV.Interfaces;
 using HIV.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -21,6 +22,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<AccountDto>>> GetAllAccounts()
         {
             try
@@ -36,6 +38,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AccountDto>> GetAccount(int id)
         {
             try
@@ -56,6 +59,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("{id}/info")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AccountInfoDto>> GetAccountInfo(int id)
         {
             try
@@ -76,6 +80,7 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AccountDto>> CreateAccount(CreateAccountDto createAccountDto)
         {
             try
@@ -100,6 +105,7 @@ namespace HIV.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateAccount(int id, UpdateAccountDto updateAccountDto)
         {
             try
@@ -126,6 +132,7 @@ namespace HIV.Controllers
         }
 
         [HttpPatch("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateAccountStatus(int id, UpdateAccountStatusDto statusDto)
         {
             try
@@ -150,6 +157,7 @@ namespace HIV.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteAccount(int id)
         {
             try
@@ -169,6 +177,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("status/{status}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<AccountDto>>> GetAccountsByStatus(string status)
         {
             try
@@ -184,6 +193,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("username/{username}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AccountDto>> GetAccountByUsername(string username)
         {
             try
