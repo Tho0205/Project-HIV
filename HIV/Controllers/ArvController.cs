@@ -42,7 +42,10 @@ namespace HIV.Controllers
         {
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            return NoContent();
+
+            // ✅ Trả lại bản ghi đã cập nhật để frontend có JSON xử lý
+            var item = await _service.GetByIdAsync(id);
+            return Ok(item);
         }
 
         [HttpDelete("{id:int}")]
@@ -50,7 +53,9 @@ namespace HIV.Controllers
         {
             var deleted = await _service.DeleteAsync(id);
             if (!deleted) return NotFound();
-            return NoContent();
+
+            // ✅ Trả JSON báo xóa thành công
+            return Ok(new { success = true, message = "ARV has been deleted (soft delete)." });
         }
     }
 }
