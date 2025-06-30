@@ -1,4 +1,5 @@
 ﻿using HIV.Hubs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -19,10 +20,11 @@ namespace HIV.Controllers
         }
 
         [HttpGet("available-staff")]
+        [Authorize(Roles = "Patient,Staff")]
         public IActionResult GetAvailableStaff()
         {
             var staffList = _appDbContext.Users
-                .Where(x => x.Role == "Doctor" || x.Role == "Staff")
+                .Where(x => x.Role == "Staff" || x.Role == "Patient")
                 .Select(x => new {
                     userId = x.UserId.ToString(),
                     name = x.FullName,
