@@ -20,11 +20,10 @@ namespace HIV.Controllers
         }
 
         [HttpGet("available-staff")]
-        [Authorize(Roles = "Patient,Staff")]
         public IActionResult GetAvailableStaff()
         {
             var staffList = _appDbContext.Users
-                .Where(x => x.Role == "Staff" || x.Role == "Patient")
+                .Where(x => x.Role == "Staff")
                 .Select(x => new {
                     userId = x.UserId.ToString(),
                     name = x.FullName,
@@ -33,6 +32,21 @@ namespace HIV.Controllers
                 .ToList();
 
             return Ok(staffList);
+        }
+
+        [HttpGet("available-patient")]
+        public IActionResult GetAvailablePatient()
+        {
+            var patientList = _appDbContext.Users
+                .Where(x => x.Role == "Patient")
+                .Select(x => new {
+                    userId = x.UserId.ToString(),
+                    name = x.FullName,
+                    role = x.Role
+                })
+                .ToList();
+
+            return Ok(patientList);
         }
     }
 }
