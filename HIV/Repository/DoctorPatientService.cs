@@ -113,40 +113,83 @@ namespace HIV.Repository
             }
         }
 
-        public async Task<bool> UpdatePatientInfoAsync(int accountId, DoctorPatientUpdateDto dto)
+        public async Task<List<DoctorPatientListDto>> GetAvailablePatientsAsync()
         {
             try
             {
-                var account = await _context.Accounts
-                    .Include(a => a.User)
-                    .FirstOrDefaultAsync(a => a.AccountId == accountId);
+                // Lấy tất cả patient IDs đã có appointment
+                var assignedPatientIds = await _context.Appointments
+                    .Select(a => a.PatientId)
+                    .Distinct()
+                    .ToListAsync();
 
-                if (account == null)
+                // Lấy patients chưa có appointment nào
+                var availablePatients = await _context.Accounts
+                    .Include(a => a.User)
+                    .Where(a => a.User.Role == "Patient" &&
+                               a.User.Status == "ACTIVE" &&
+                               !assignedPatientIds.Contains(a.User.UserId))
+                    .Select(account => new DoctorPatientListDto
+                    {
+                        AccountId = account.AccountId,
+                        Email = account.Email ?? "",
+                        CreatedAt = account.CreatedAt,
+                        FullName = account.User.FullName ?? "",
+                        Phone = account.User.Phone,
+                        Gender = account.User.Gender ?? "Other",
+                        Birthdate = account.User.Birthdate,
+                        Address = account.User.Address ?? "",
+                        UserAvatar = account.User.UserAvatar,
+                        Status = account.User.Status,
+                        AppointmentCount = 0,
+                        LastAppointmentDate = null
+                    })
+                    .OrderBy(p => p.FullName)
+                    .ToListAsync();
+
+                return availablePatients;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available patients");
+                throw new ApplicationException("Không thể tải danh sách bệnh nhân khả dụng", ex);
+            }
+        }
+
+        public async Task<bool> AssignPatientToDoctorAsync(int doctorId, int patientId)
+        {
+            try
+            {
+                // Kiểm tra patient chưa có appointment nào
+                var hasAppointment = await _context.Appointments
+                    .AnyAsync(a => a.PatientId == patientId);
+
+                if (hasAppointment)
                 {
-                    _logger.LogWarning("Account not found: {AccountId}", accountId);
+                    _logger.LogWarning("Patient {PatientId} already has appointments", patientId);
                     return false;
                 }
 
-                // Cập nhật thông tin
-                account.Email = dto.Email;
-
-                if (account.User != null)
+                // Tạo appointment đầu tiên để establish relationship
+                var appointment = new Appointment
                 {
-                    account.User.FullName = dto.FullName;
-                    account.User.Phone = dto.Phone;
-                    account.User.Gender = dto.Gender;
-                    account.User.Birthdate = dto.Birthdate;
-                    account.User.Address = dto.Address;
-                    account.User.Status = dto.Status;
-                }
+                    DoctorId = doctorId,
+                    PatientId = patientId,
+                    AppointmentDate = DateTime.Now.AddDays(7), // Default 7 ngày sau
+                    Status = "Pending",
+                    Note = "Lịch hẹn khám đầu tiên",
+                    CreatedAt = DateTime.Now
+                };
 
+                _context.Appointments.Add(appointment);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Patient info updated successfully for accountId: {AccountId}", accountId);
+
+                _logger.LogInformation("Patient {PatientId} assigned to doctor {DoctorId}", patientId, doctorId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating patient info for accountId: {AccountId}", accountId);
+                _logger.LogError(ex, "Error assigning patient to doctor");
                 return false;
             }
         }
