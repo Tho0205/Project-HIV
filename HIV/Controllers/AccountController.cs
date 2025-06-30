@@ -82,7 +82,7 @@ namespace WebAPITest.Controllers
                 //user_avatar = user?.UserAvatar ?? "Unknown",
                 //userid = account.User.UserId,
                 // trả về 1 token
-                token = token, 
+                token = token,
                 expires = DateTime.UtcNow.AddMinutes(30),
                 success = true,
                 message = "Login successful"
