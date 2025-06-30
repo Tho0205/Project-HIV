@@ -140,7 +140,7 @@ namespace WebAPITest.Controllers
 
         // GET: api/Account/
         [HttpGet("{id}")]
-        [Authorize(Roles = "Patient")]
+        [Authorize(Roles = "Patient,Doctor")]
         public async Task<ActionResult<DTOGetbyID>> GetAccountById(int id)
         {
 
