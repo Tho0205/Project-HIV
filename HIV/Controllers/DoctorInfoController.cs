@@ -1,11 +1,13 @@
 ﻿using HIV.DTOs;
 using HIV.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HIV.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Staff,Admin")]
     public class DoctorInfoController : ControllerBase
     {
         private readonly IDoctorInfoService _service;
@@ -16,6 +18,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetAll()
         {
             var data = await _service.GetAllAsync();
@@ -23,6 +26,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetById(int id)
         {
             var data = await _service.GetByIdAsync(id);
@@ -31,6 +35,7 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Create(CreateDoctorInfoDto dto)
         {
             var created = await _service.CreateAsync(dto);
@@ -38,6 +43,7 @@ namespace HIV.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Update(int id, UpdateDoctorInfoDto dto)
         {
             var success = await _service.UpdateAsync(id, dto);
@@ -45,6 +51,7 @@ namespace HIV.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _service.DeleteAsync(id);
@@ -52,6 +59,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("active")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetActiveDoctors()
         {
             var data = await _service.GetAllAsync();
