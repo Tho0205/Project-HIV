@@ -79,7 +79,27 @@ namespace HIV.Repository
         }
         public async Task<UserTableDTO> GetInforUser(int id)
         {
-            var user = await _context.Users.Where(u => u.UserId == id).FirstOrDefaultAsync();
+            var user = await _context.Users
+                .Where(u => u.UserId == id)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            var schedules = await _context.Appointments
+                .Where(a => a.PatientId == id)
+                .Include(a => a.Schedule) // Di chuyển Include lên đây
+                .Select(a => a.Schedule) // Chỉ lấy Schedule
+                .Select(s => new ScheduleSimpleDTO
+                {
+                    ScheduleId = s.ScheduleId,
+                    ScheduledTime = s.ScheduledTime,
+                    Room = s.Room,
+                    Status = s.Status
+                }).ToListAsync();
+
             return new UserTableDTO
             {
                 UserId = user.UserId,
@@ -88,9 +108,13 @@ namespace HIV.Repository
                 Phone = user.Phone,
                 Gender = user.Gender,
                 Birthdate = user.Birthdate,
-                Role = user.Role
+                Role = user.Role,
+                Schedules = schedules
             };
         }
+
+
+
         public async Task<bool> CancelAppointment(int id)
         {
             var appoint = await _context.Appointments.FindAsync(id);
@@ -99,7 +123,7 @@ namespace HIV.Repository
                 throw new ArgumentException("Appointment không tồn tại");
             }
 
-            appoint.Status = "Cancel";
+            appoint.Status = "CANCELLED";
             await _context.SaveChangesAsync();
             return true;
         }
@@ -110,6 +134,7 @@ namespace HIV.Repository
                 AppointmentId = a.AppointmentId,
                 ScheduleId = a.ScheduleId,
                 doctorId = a.DoctorId,
+                PatientId = a.PatientId,
                 Note = a.Note,
                 AppoinmentType = a.AppoinmentType,
                 Status = a.Status,
