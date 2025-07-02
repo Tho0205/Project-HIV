@@ -22,6 +22,7 @@ namespace HIV.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Staff,Admin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var data = await _service.GetAllAsync();

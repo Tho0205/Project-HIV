@@ -148,7 +148,7 @@ namespace HIV.Repository
                         Birthdate = account.User.Birthdate,
                         Address = account.User.Address ?? "",
                         UserAvatar = account.User.UserAvatar,
-                        Status = account.User.Status,
+                        //Status = account.User.Status,
                         AppointmentCount = 0,
                         LastAppointmentDate = null
                     })
