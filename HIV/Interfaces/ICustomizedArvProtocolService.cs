@@ -1,13 +1,14 @@
-﻿using HIV.DTOs.DTOARVs;
+﻿// ICustomizedArvProtocolService.cs
+using HIV.DTOs.DTOARVs;
 
 namespace HIV.Interfaces.ARVinterfaces
 {
     public interface ICustomizedArvProtocolService
     {
-        Task<IEnumerable<CustomizedArvProtocolDto>> GetAllAsync();
-        Task<CustomizedArvProtocolDto?> GetByIdAsync(int id);
-        Task<CustomizedArvProtocolDto> CreateAsync(CreateCustomizedArvProtocolDto dto);
-        Task<bool> UpdateAsync(int id, UpdateCustomizedArvProtocolDto dto);
-        Task<bool> DeleteAsync(int id);
+        Task<List<PatientWithProtocolDto>> GetPatientsWithProtocolsAsync(int doctorId);
+        Task<FullCustomProtocolDto> GetPatientCurrentProtocolAsync(int patientId);
+        Task<FullCustomProtocolDto> CreateCustomProtocolAsync(int doctorId, int patientId, CreateCustomProtocolRequest request);
+        Task<bool> UpdatePatientProtocolAsync(int patientId, UpdatePatientProtocolRequest request);
+        Task<List<FullCustomProtocolDto>> GetPatientProtocolHistoryAsync(int patientId);
     }
 }
