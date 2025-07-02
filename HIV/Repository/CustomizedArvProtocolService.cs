@@ -1,4 +1,6 @@
-﻿using HIV.DTOs.DTOARVs;
+﻿using HIV.DTOs;
+using HIV.DTOs.DTOARVs;
+using HIV.Interfaces;
 using HIV.Interfaces.ARVinterfaces;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +10,12 @@ namespace HIV.Repository
     public class CustomizedArvProtocolService : ICustomizedArvProtocolService
     {
         private readonly AppDbContext _context;
+        private readonly IMedicalRecordService _medicalRecordService;
 
-        public CustomizedArvProtocolService(AppDbContext context)
+        public CustomizedArvProtocolService(AppDbContext context, IMedicalRecordService medicalRecordService)
         {
             _context = context;
+            _medicalRecordService = medicalRecordService;
         }
 
         public async Task<List<PatientWithProtocolDto>> GetPatientsWithProtocolsAsync(int doctorId)
@@ -239,5 +243,19 @@ namespace HIV.Repository
                 })
                 .ToListAsync();
         }
+        public async Task<bool> UpdateProtocolAsync(int protocolId, UpdateCustomProtocolDto dto)
+        {
+            var protocol = await _context.CustomizedARVProtocols.FindAsync(protocolId);
+            if (protocol == null) return false;
+
+            protocol.Name = dto.Name;
+            protocol.Description = dto.Description;
+
+            await _context.SaveChangesAsync();
+
+            await _medicalRecordService.UpdateCustomProtocolReference(protocolId);
+            return true;
+        }
+
     }
 }
