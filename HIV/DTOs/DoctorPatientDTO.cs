@@ -5,6 +5,7 @@ namespace HIV.DTOs.DoctorPatient
     public class DoctorPatientListDto
     {
         public int AccountId { get; set; }
+        public int UserId { get; set; }
         public string Email { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string FullName { get; set; } = string.Empty;
@@ -30,10 +31,10 @@ namespace HIV.DTOs.DoctorPatient
     public class DoctorPatientStatsDto
     {
         public int TotalPatients { get; set; }
-        public int ActivePatients { get; set; }
-        public int InactivePatients { get; set; }
-        public int RecentAppointments { get; set; }
-        public int PendingAppointments { get; set; }
+        public int TodayAppointments { get; set; }
+        public int ControlledPatients { get; set; }
+        public int UnstablePatients { get; set; }
+
     }
 
     public class DoctorPatientsResponseDto

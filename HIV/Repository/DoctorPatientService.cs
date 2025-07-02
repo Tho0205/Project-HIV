@@ -78,6 +78,7 @@ namespace HIV.Repository
                     .Select(account => new DoctorPatientListDto
                     {
                         AccountId = account.AccountId,
+                        UserId = account.User.UserId,
                         Email = account.Email ?? "",
                         CreatedAt = account.CreatedAt,
                         FullName = account.User.FullName ?? "",
@@ -132,6 +133,7 @@ namespace HIV.Repository
                     .Select(account => new DoctorPatientListDto
                     {
                         AccountId = account.AccountId,
+                        UserId = account.User.UserId,
                         Email = account.Email ?? "",
                         CreatedAt = account.CreatedAt,
                         FullName = account.User.FullName ?? "",
@@ -160,31 +162,71 @@ namespace HIV.Repository
         {
             try
             {
-                // Kiểm tra patient chưa có appointment nào
-                var hasAppointment = await _context.Appointments
-                    .AnyAsync(a => a.PatientId == patientId);
+                // Lấy User từ accountId hoặc userId
+                var patientUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.AccountId == patientId || u.UserId == patientId);
 
-                if (hasAppointment)
+                if (patientUser == null)
                 {
-                    _logger.LogWarning("Patient {PatientId} already has appointments", patientId);
+                    _logger.LogWarning("Patient not found with id: {PatientId}", patientId);
                     return false;
                 }
 
-                // Tạo appointment đầu tiên để establish relationship
+                // Kiểm tra patient chưa có appointment nào
+                var hasAppointment = await _context.Appointments
+                    .AnyAsync(a => a.PatientId == patientUser.UserId);
+
+                if (hasAppointment)
+                {
+                    _logger.LogWarning("Patient {PatientId} already has appointments", patientUser.UserId);
+                    return false;
+                }
+
+                // Lấy schedule có sẵn của doctor hoặc tạo mới
+                var existingSchedule = await _context.Schedules
+                    .Where(s => s.DoctorId == doctorId &&
+                               s.Status == "ACTIVE" &&
+                               s.ScheduledTime.Date >= DateTime.Now.Date)
+                    .OrderBy(s => s.ScheduledTime)
+                    .FirstOrDefaultAsync();
+
+                int scheduleId;
+
+                if (existingSchedule != null)
+                {
+                    scheduleId = existingSchedule.ScheduleId;
+                }
+                else
+                {
+                    // Tạo schedule mới nếu chưa có
+                    var newSchedule = new Schedule
+                    {
+                        DoctorId = doctorId,
+                        ScheduledTime = DateTime.Now.AddDays(7).Date.AddHours(9), // 9 giờ sáng
+                        Room = $"P{doctorId}", // Phòng theo mã bác sĩ
+                        Status = "ACTIVE"
+                    };
+                    _context.Schedules.Add(newSchedule);
+                    await _context.SaveChangesAsync();
+                    scheduleId = newSchedule.ScheduleId;
+                }
+
+                // Tạo appointment
                 var appointment = new Appointment
                 {
                     DoctorId = doctorId,
-                    PatientId = patientId,
-                    AppointmentDate = DateTime.Now.AddDays(7), // Default 7 ngày sau
-                    Status = "Pending",
-                    Note = "Lịch hẹn khám đầu tiên",
+                    PatientId = patientUser.UserId,
+                    ScheduleId = scheduleId,
+                    AppointmentDate = DateTime.Now.AddDays(7),
+                    Status = "SCHEDULED",
+                    Note = "Đã được phân công cho bác sĩ",
                     CreatedAt = DateTime.Now
                 };
 
                 _context.Appointments.Add(appointment);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Patient {PatientId} assigned to doctor {DoctorId}", patientId, doctorId);
+                _logger.LogInformation("Patient {PatientId} assigned to doctor {DoctorId}", patientUser.UserId, doctorId);
                 return true;
             }
             catch (Exception ex)
@@ -198,7 +240,6 @@ namespace HIV.Repository
         {
             try
             {
-                // Get User from doctorId
                 var doctorUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == doctorId);
 
@@ -207,44 +248,66 @@ namespace HIV.Repository
                     return new DoctorPatientStatsDto
                     {
                         TotalPatients = 0,
-                        ActivePatients = 0,
-                        InactivePatients = 0,
-                        RecentAppointments = 0,
-                        PendingAppointments = 0
+                        TodayAppointments = 0,
+                        ControlledPatients = 0,
+                        UnstablePatients = 0
                     };
                 }
 
-                var totalPatients = await _context.Appointments
+                // 1. Lấy danh sách patient IDs
+                var patientIds = await _context.Appointments
                     .Where(a => a.DoctorId == doctorUser.UserId)
                     .Select(a => a.PatientId)
                     .Distinct()
-                    .CountAsync();
+                    .ToListAsync();
 
-                var activePatients = await _context.Appointments
-                    .Include(a => a.Patient)
-                    .Where(a => a.DoctorId == doctorUser.UserId && a.Patient.Status == "ACTIVE")
-                    .Select(a => a.PatientId)
-                    .Distinct()
-                    .CountAsync();
+                // 2. Tổng số bệnh nhân
+                var totalPatients = patientIds.Count;
 
-                var recentAppointments = await _context.Appointments
+                // 3. Lịch hẹn hôm nay
+                var today = DateTime.Now.Date;
+                var todayAppointments = await _context.Appointments
                     .Where(a => a.DoctorId == doctorUser.UserId &&
-                               a.AppointmentDate >= DateTime.Now.AddDays(-30))
+                               a.AppointmentDate.Date == today &&
+                               a.Status == "SCHEDULED") // Chỉ đếm lịch đã lên
                     .CountAsync();
 
-                var pendingAppointments = await _context.Appointments
-                    .Where(a => a.DoctorId == doctorUser.UserId &&
-                               a.Status == "Pending" &&
-                               a.AppointmentDate >= DateTime.Now)
-                    .CountAsync();
+                // 4. Phân loại bệnh nhân theo chỉ số HIV
+                int controlledCount = 0;
+                int unstableCount = 0;
+
+                foreach (var patientId in patientIds)
+                {
+                    var latestExam = await _context.Examinations
+                        .Where(e => e.PatientId == patientId &&
+                                   e.DoctorId == doctorUser.UserId &&
+                                   e.Status == "ACTIVE" &&
+                                   e.Cd4Count.HasValue &&
+                                   e.HivLoad.HasValue)
+                        .OrderByDescending(e => e.ExamDate ?? DateOnly.FromDateTime(e.CreatedAt))
+                        .FirstOrDefaultAsync();
+
+                    if (latestExam != null)
+                    {
+                        // Đã kiểm soát: CD4 >= 500 HOẶC HIV Load < 200
+                        if (latestExam.Cd4Count >= 500 || latestExam.HivLoad < 200)
+                        {
+                            controlledCount++;
+                        }
+                        // Bất ổn: CD4 < 500 HOẶC HIV Load >= 200
+                        else if (latestExam.Cd4Count < 500 || latestExam.HivLoad >= 200)
+                        {
+                            unstableCount++;
+                        }
+                    }
+                }
 
                 return new DoctorPatientStatsDto
                 {
                     TotalPatients = totalPatients,
-                    ActivePatients = activePatients,
-                    InactivePatients = totalPatients - activePatients,
-                    RecentAppointments = recentAppointments,
-                    PendingAppointments = pendingAppointments
+                    TodayAppointments = todayAppointments,
+                    ControlledPatients = controlledCount,
+                    UnstablePatients = unstableCount
                 };
             }
             catch (Exception ex)
@@ -258,15 +321,18 @@ namespace HIV.Repository
         {
             try
             {
-                // Get User from doctorId
+                // Get User từ doctorId
                 var doctorUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == doctorId);
 
+                // Tìm patient user từ accountId hoặc userId
                 var patientUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == patientId || u.AccountId == patientId);
 
                 if (doctorUser == null || patientUser == null)
                 {
+                    _logger.LogWarning("Doctor or patient not found. DoctorId: {DoctorId}, PatientId: {PatientId}",
+                        doctorId, patientId);
                     return new PatientHistoryDto
                     {
                         Appointments = new List<AppointmentHistoryDto>(),
@@ -274,9 +340,11 @@ namespace HIV.Repository
                     };
                 }
 
+                // Query với userId thực
                 var appointments = await _context.Appointments
                     .Include(a => a.Schedule)
-                    .Where(a => a.PatientId == patientUser.UserId && a.DoctorId == doctorUser.UserId)
+                    .Where(a => a.PatientId == patientUser.UserId &&
+                               a.DoctorId == doctorUser.UserId)
                     .OrderByDescending(a => a.AppointmentDate)
                     .Select(a => new AppointmentHistoryDto
                     {
@@ -320,24 +388,35 @@ namespace HIV.Repository
         {
             try
             {
-                // Get User from doctorId
+                // Get User từ doctorId
                 var doctorUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == doctorId);
 
+                // Kiểm tra cả accountId và userId cho patient
                 var patientUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == patientId || u.AccountId == patientId);
 
                 if (doctorUser == null || patientUser == null)
                 {
+                    _logger.LogWarning("Doctor or patient not found. DoctorId: {DoctorId}, PatientId: {PatientId}",
+                        doctorId, patientId);
                     return false;
                 }
 
-                return await _context.Appointments
-                    .AnyAsync(a => a.DoctorId == doctorUser.UserId && a.PatientId == patientUser.UserId);
+                // Kiểm tra appointment với userId của patient
+                var hasAccess = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == doctorUser.UserId &&
+                                  a.PatientId == patientUser.UserId);
+
+                _logger.LogInformation("Access check - DoctorUserId: {DoctorUserId}, PatientUserId: {PatientUserId}, HasAccess: {HasAccess}",
+                    doctorUser.UserId, patientUser.UserId, hasAccess);
+
+                return hasAccess;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking doctor access for doctorId: {DoctorId}, patientId: {PatientId}", doctorId, patientId);
+                _logger.LogError(ex, "Error checking doctor access for doctorId: {DoctorId}, patientId: {PatientId}",
+                    doctorId, patientId);
                 return false;
             }
         }
