@@ -59,7 +59,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting doctor patients");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-6" });
             }
         }
 
@@ -91,7 +91,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting patient stats");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-5" });
             }
         }
 
@@ -133,7 +133,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting patient history");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-4" });
             }
         }
 
@@ -170,7 +170,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting patient detail");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-3" });
             }
         }
 
@@ -191,7 +191,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting available patients");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-2" });
             }
         }
 
@@ -225,7 +225,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error assigning patient to doctor");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-1" });
             }
         }
     }
