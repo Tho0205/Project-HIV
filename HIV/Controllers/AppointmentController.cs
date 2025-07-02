@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient.DataClassification;
 using HIV.DTOs.DTOSchedule;
+using HIV.Repository;
 namespace HIV.Controllers
 {
     [Route("api/[controller]")]
@@ -72,6 +73,103 @@ namespace HIV.Controllers
         {
             var listAppoint = await _appService.GetAll();
             return Ok(listAppoint);
+        }
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<ActionResult<List<PatientOfDoctorDTO>>> GetPatientsOfDoctor(int doctorId)
+        {
+            try
+            {
+                var patients = await _appService.GetPatientsOfDoctor(doctorId);
+                return Ok(patients);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+ 
+        [HttpPut("update-status")]
+        public async Task<IActionResult> UpdateAppointmentStatus([FromBody] UpdateAppointmentStatusDTO dto)
+        {
+            try
+            {
+                var result = await _appService.UpdateAppointmentStatus(dto);
+                if (result)
+                {
+                    return Ok(new { message = "Cập nhật status thành công", success = true });
+                }
+                return BadRequest(new { message = "Cập nhật status thất bại", success = false });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message, success = false });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, success = false });
+            }
+        }
+
+        [HttpPut("confirm/{appointmentId}")]
+        public async Task<IActionResult> ConfirmAppointment(int appointmentId, [FromBody] string? note = null)
+        {
+            try
+            {
+                var result = await _appService.ConfirmAppointment(appointmentId, note);
+                if (result)
+                {
+                    return Ok(new { message = "Xác nhận lịch hẹn thành công", success = true });
+                }
+                return BadRequest(new { message = "Xác nhận lịch hẹn thất bại", success = false });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message, success = false });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, success = false });
+            }
+        }
+
+        [HttpPut("complete/{appointmentId}")]
+        public async Task<IActionResult> CompleteAppointment(int appointmentId, [FromBody] string? note = null)
+        {
+            try
+            {
+                var result = await _appService.CompleteAppointment(appointmentId, note);
+                if (result)
+                {
+                    return Ok(new { message = "Hoàn thành lịch hẹn thành công", success = true });
+                }
+                return BadRequest(new { message = "Hoàn thành lịch hẹn thất bại", success = false });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message, success = false });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, success = false });
+            }
+        }
+
+        [HttpGet("{appointmentId}")]
+        public async Task<IActionResult> GetAppointmentById(int appointmentId)
+        {
+            try
+            {
+                var appointment = await _appService.GetAppointmentById(appointmentId);
+                return Ok(appointment);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message, success = false });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, success = false });
+            }
         }
 
     }   
