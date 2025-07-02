@@ -9,11 +9,13 @@ namespace HIV.Repository
     {
         private readonly AppDbContext _context;
         private readonly ILogger<HIVExaminationService> _logger;
+        private readonly IMedicalRecordService _medicalRecordService;
 
-        public HIVExaminationService(AppDbContext context, ILogger<HIVExaminationService> logger)
+        public HIVExaminationService(AppDbContext context, ILogger<HIVExaminationService> logger, IMedicalRecordService medicalRecordService)
         {
             _context = context;
             _logger = logger;
+            _medicalRecordService = medicalRecordService;
         }
 
         public async Task<List<PatientListDTO>> GetPatientsAsync(int page, int pageSize)
@@ -147,5 +149,20 @@ namespace HIV.Repository
                 })
                 .ToListAsync<object>();
         }
+
+        public async Task<bool> UpdateExamAsync(int examId, HIVExaminationDto dto)
+        {
+            var exam = await _context.Examinations.FindAsync(examId);
+            if (exam == null) return false;
+
+            exam.Cd4Count = dto.CD4Count;
+            exam.HivLoad = dto.ViralLoad;
+
+            await _context.SaveChangesAsync();
+
+            await _medicalRecordService.UpdateExamReference(examId);
+            return true;
+        }
+
     }
 }

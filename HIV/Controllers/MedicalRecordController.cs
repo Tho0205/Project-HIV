@@ -52,5 +52,19 @@ namespace HIV.Controllers
             if (!success) return NotFound();
             return NoContent();
         }
+
+        [HttpGet("patient/{patientId}")]
+        public async Task<IActionResult> GetByPatient(int patientId)
+        {
+            var records = await _service.GetByPatientIdAsync(patientId);
+            return Ok(records);
+        }
+
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetByDoctor(int doctorId)
+        {
+            var records = await _service.GetByDoctorIdAsync(doctorId);
+            return Ok(records);
+        }
     }
 }
