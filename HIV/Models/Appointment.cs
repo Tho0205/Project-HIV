@@ -7,7 +7,7 @@ public partial class Appointment
 {
     [System.ComponentModel.DataAnnotations.Key]
     public int AppointmentId { get; set; }
-    public int? PatientId { get; set; }
+    public int PatientId { get; set; }
     public int ScheduleId { get; set; }
     public int DoctorId { get; set; }
     public string? Note { get; set; }

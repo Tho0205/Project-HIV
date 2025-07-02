@@ -1,33 +1,61 @@
 ﻿namespace HIV.DTOs.DTOARVs
 {
-    public class CustomizedArvProtocolDto
+    public class PatientWithProtocolDto
     {
-        public int CustomProtocolId { get; set; }
-        public int? DoctorId { get; set; }
-        public int? PatientId { get; set; }
-        public int? BaseProtocolId { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public string Status { get; set; } = "ACTIVE";
+        public int PatientId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public LatestExaminationDto? LatestExamination { get; set; }
+        public ProtocolInfoDto? CurrentProtocol { get; set; }
     }
-    public class CreateCustomizedArvProtocolDto
+
+    public class LatestExaminationDto
     {
-        public int? DoctorId { get; set; }
-        public int? PatientId { get; set; }
-        public int? BaseProtocolId { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public string Status { get; set; } = "ACTIVE";
+        public DateOnly? ExamDate { get; set; }
+        public int? Cd4Count { get; set; }
+        public int? HivLoad { get; set; }
+        public string? Result { get; set; }
     }
-    public class UpdateCustomizedArvProtocolDto
+
+    public class ProtocolInfoDto
     {
-        public int CustomProtocolId { get; set; }
-        public int? DoctorId { get; set; }
-        public int? PatientId { get; set; }
-        public int? BaseProtocolId { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
+        public int ProtocolId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool IsCustom { get; set; }
+    }
+
+    public class CustomProtocolDetailDto
+    {
+        public int DetailId { get; set; }
+        public int ArvId { get; set; }
+        public string ArvName { get; set; } = string.Empty;
+        public string Dosage { get; set; } = string.Empty;
+        public string? UsageInstruction { get; set; }
         public string Status { get; set; } = "ACTIVE";
     }
 
+    public class FullCustomProtocolDto
+    {
+        public int CustomProtocolId { get; set; }
+        public int? BaseProtocolId { get; set; }
+        public string? BaseProtocolName { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string Status { get; set; } = "ACTIVE";
+        public List<CustomProtocolDetailDto> Details { get; set; } = new();
+    }
+
+    public class CreateCustomProtocolRequest
+    {
+        public int? BaseProtocolId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public List<CustomProtocolDetailDto> Details { get; set; } = new();
+    }
+
+    public class UpdatePatientProtocolRequest
+    {
+        public int ProtocolId { get; set; }
+        public bool IsCustom { get; set; }
+    }
 }

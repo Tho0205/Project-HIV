@@ -21,7 +21,7 @@ namespace HIV.Controllers
         /// Lấy lịch làm việc của bác sĩ (Doctor Feature)
         /// </summary>
         [HttpGet("doctor/{doctorId}")]
-        [Authorize(Roles = "Doctor")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<List<ScheduleDto>>>> GetDoctorSchedules(
             int doctorId,
             [FromQuery] DateTime? fromDate = null,
@@ -63,6 +63,7 @@ namespace HIV.Controllers
         /// Tạo lịch làm việc mới (Doctor Feature)
         /// </summary>
         [HttpPost]
+        //[AllowAnonymous]
         [Authorize(Roles = "Doctor")]
         public async Task<ActionResult<ApiResponse<ScheduleDto>>> CreateSchedule([FromBody] CreateScheduleDto dto)
         {
@@ -149,5 +150,22 @@ namespace HIV.Controllers
                 return StatusCode(500, ApiResponse<List<ScheduleDto>>.ErrorResult("Lỗi server: " + ex.Message));
             }
         }
+        [HttpGet("active")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<List<ScheduleDto>>>> GetActiveSchedules(
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null)
+        {
+            try
+            {
+                var schedules = await _scheduleService.GetActiveSchedulesAsync(fromDate, toDate);
+                return Ok(ApiResponse<List<ScheduleDto>>.SuccessResult(schedules, "Lấy danh sách lịch làm việc hoạt động thành công"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<List<ScheduleDto>>.ErrorResult("Lỗi server: " + ex.Message));
+            }
+        }
+
     }
 }

@@ -119,5 +119,87 @@ namespace HIV.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<MedicalRecordDto>> GetByDoctorIdAsync(int doctorId)
+        {
+            return await _context.MedicalRecords
+                .Where(r => r.DoctorId == doctorId)
+                .Include(r => r.Patient)
+                .Include(r => r.Doctor)
+                .Select(r => new MedicalRecordDto
+                {
+                    RecordId = r.RecordId,
+                    PatientId = r.PatientId,
+                    DoctorId = r.DoctorId,
+                    ExamId = r.ExamId,
+                    CustomProtocolId = r.CustomProtocolId,
+                    ExamDate = r.ExamDate,
+                    ExamTime = r.ExamTime,
+                    Status = r.Status,
+                    IssuedAt = r.IssuedAt,
+                    Summary = r.Summary,
+                    DoctorName = r.Doctor.FullName,
+                    PatientName = r.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId)
+        {
+            return await _context.MedicalRecords
+                .Where(r => r.PatientId == patientId)
+                .Include(r => r.Doctor)
+                .Include(r => r.Patient)
+                .Select(r => new MedicalRecordDto
+                {
+                    RecordId = r.RecordId,
+                    PatientId = r.PatientId,
+                    DoctorId = r.DoctorId,
+                    ExamId = r.ExamId,
+                    CustomProtocolId = r.CustomProtocolId,
+                    ExamDate = r.ExamDate,
+                    ExamTime = r.ExamTime,
+                    Status = r.Status,
+                    IssuedAt = r.IssuedAt,
+                    Summary = r.Summary,
+                    DoctorName = r.Doctor.FullName,
+                    PatientName = r.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> UpdateExamReference(int examId)
+        {
+            var records = await _context.MedicalRecords
+                .Where(r => r.ExamId == examId)
+                .ToListAsync();
+
+            if (!records.Any()) return false;
+
+            foreach (var record in records)
+            {
+                record.ExamId = examId;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateCustomProtocolReference(int customProtocolId)
+        {
+            var records = await _context.MedicalRecords
+                .Where(r => r.CustomProtocolId == customProtocolId)
+                .ToListAsync();
+
+            if (!records.Any()) return false;
+
+            foreach (var record in records)
+            {
+                record.CustomProtocolId = customProtocolId;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

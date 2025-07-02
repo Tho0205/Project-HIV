@@ -60,10 +60,16 @@ namespace HIV.Repository
                     };
                 }
 
+                var appointmentsSubquery = _context.Appointments
+                   .Where(a => a.DoctorId == doctorId)
+                   .Select(a => a.PatientId)
+                   .Distinct();
+
                 var query = _context.Accounts
                     .Include(a => a.User)
-                    .Where(a => a.User.Role == "Patient" &&
-                               patientIds.Contains(a.User.UserId) &&
+                    .Where(a => a.User != null &&
+                               a.User.Role == "Patient" &&
+                               appointmentsSubquery.Contains(a.User.UserId) &&
                                a.User.Status != "DELETED")
                     .AsQueryable();
 
@@ -87,7 +93,7 @@ namespace HIV.Repository
                         Birthdate = account.User.Birthdate,
                         Address = account.User.Address ?? "",
                         UserAvatar = account.User.UserAvatar,
-                        Status = account.User.Status,
+                        status = account.User.Status,
                         AppointmentCount = _context.Appointments
                             .Count(app => app.PatientId == account.User.UserId && app.DoctorId == doctorUser.UserId),
                         LastAppointmentDate = _context.Appointments
@@ -457,7 +463,7 @@ namespace HIV.Repository
                         Birthdate = a.User.Birthdate,
                         Address = a.User.Address ?? "",
                         UserAvatar = a.User.UserAvatar,
-                        Status = a.User.Status,
+                        status = a.User.Status,
                         AppointmentCount = _context.Appointments
                             .Count(app => app.PatientId == patientUser.UserId && app.DoctorId == doctorUser.UserId),
                         LastAppointmentDate = _context.Appointments
