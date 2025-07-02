@@ -1,8 +1,8 @@
 ﻿using HIV.Interfaces;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
+//using System.Security.Cryptography;
+//using System.Text;
 
 namespace DemoSWP391.Services
 {
@@ -40,7 +40,7 @@ namespace DemoSWP391.Services
         public async Task<Account> CreateAccountAsync(Account account)
         {
             // Hash password trước khi lưu
-            account.PasswordHash = HashPassword(account.PasswordHash);
+            //account.PasswordHash = HashPassword(account.PasswordHash);
             account.CreatedAt = DateTime.UtcNow;
 
             _context.Accounts.Add(account);
@@ -80,7 +80,8 @@ namespace DemoSWP391.Services
             // Cập nhật password nếu có
             if (!string.IsNullOrEmpty(account.PasswordHash))
             {
-                existingAccount.PasswordHash = HashPassword(account.PasswordHash);
+                //existingAccount.PasswordHash = HashPassword(account.PasswordHash);
+                existingAccount.PasswordHash = account.PasswordHash;
             }
 
             // Cập nhật role
@@ -167,13 +168,13 @@ namespace DemoSWP391.Services
                 .AnyAsync(a => a.Username == username || (!string.IsNullOrEmpty(email) && a.Email == email));
         }
 
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
-        }
+        //private string HashPassword(string password)
+        //{
+        //    using (var sha256 = SHA256.Create())
+        //    {
+        //        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        //        return Convert.ToBase64String(hashedBytes);
+        //    }
+        //}
     }
 }
