@@ -5,6 +5,7 @@ namespace HIV.DTOs.DoctorPatient
     public class DoctorPatientListDto
     {
         public int AccountId { get; set; }
+        public int UserId { get; set; }
         public string Email { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string FullName { get; set; } = string.Empty;
@@ -18,40 +19,22 @@ namespace HIV.DTOs.DoctorPatient
         public DateTime? LastAppointmentDate { get; set; }
     }
 
-    public class DoctorPatientUpdateDto
+    public class AssignPatientDto
     {
         [Required]
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        public string Email { get; set; } = string.Empty;
+        public int DoctorId { get; set; }
 
         [Required]
-        [StringLength(100, ErrorMessage = "Tên không được quá 100 ký tự")]
-        public string FullName { get; set; } = string.Empty;
-
-        [Required]
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        public string Phone { get; set; } = string.Empty;
-
-        [Required]
-        public string Gender { get; set; } = "Other";
-
-        public DateOnly? Birthdate { get; set; }
-
-        [Required]
-        [StringLength(200, ErrorMessage = "Địa chỉ không được quá 200 ký tự")]
-        public string Address { get; set; } = string.Empty;
-
-        [Required]
-        public string Status { get; set; } = "ACTIVE";
+        public int PatientId { get; set; }
     }
 
     public class DoctorPatientStatsDto
     {
         public int TotalPatients { get; set; }
-        public int ActivePatients { get; set; }
-        public int InactivePatients { get; set; }
-        public int RecentAppointments { get; set; }
-        public int PendingAppointments { get; set; }
+        public int TodayAppointments { get; set; }
+        public int ControlledPatients { get; set; }
+        public int UnstablePatients { get; set; }
+
     }
 
     public class DoctorPatientsResponseDto

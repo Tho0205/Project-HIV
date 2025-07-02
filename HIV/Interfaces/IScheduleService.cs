@@ -11,5 +11,8 @@ namespace DemoSWP391.Services
         Task<ScheduleDto?> UpdateScheduleAsync(int scheduleId, UpdateScheduleDto dto);
         Task<bool> DeleteScheduleAsync(int scheduleId);
         Task<List<ScheduleDto>> GetAvailableSchedulesAsync(DateTime? date = null);
+
+        Task<List<ScheduleDto>> GetActiveSchedulesAsync(DateTime? fromDate = null, DateTime? toDate = null);
+
     }
 }

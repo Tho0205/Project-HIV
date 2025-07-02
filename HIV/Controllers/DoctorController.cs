@@ -64,62 +64,6 @@ namespace HIV.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin bệnh nhân
-        /// </summary>
-        [HttpPut("UpdatePatient/{accountId}")]
-        [Authorize(Roles = "Doctor")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(500)]
-        public async Task<ActionResult> UpdatePatientInfo(
-            int accountId,
-            [FromBody] DoctorPatientUpdateDto dto)
-        {
-            try
-            {
-                if (accountId <= 0)
-                {
-                    return BadRequest(new { message = "AccountId không hợp lệ" });
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState
-                        .SelectMany(x => x.Value.Errors)
-                        .Select(x => x.ErrorMessage)
-                        .ToList();
-                    return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
-                }
-
-                // Add status to DTO if not provided
-                if (string.IsNullOrEmpty(dto.Status))
-                {
-                    dto.Status = "ACTIVE";
-                }
-
-                var result = await _doctorPatientService.UpdatePatientInfoAsync(accountId, dto);
-
-                if (!result)
-                {
-                    return NotFound(new { message = "Không tìm thấy bệnh nhân" });
-                }
-
-                return NoContent();
-            }
-            catch (ApplicationException ex)
-            {
-                _logger.LogError(ex, "Application error updating patient info");
-                return StatusCode(500, new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error updating patient info");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
-            }
-        }
-
-        /// <summary>
         /// Lấy thống kê bệnh nhân của doctor
         /// </summary>
         [HttpGet("PatientStats/{doctorId}")]
@@ -226,6 +170,61 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting patient detail");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách bệnh nhân chưa có bác sĩ
+        /// </summary>
+        [HttpGet("AvailablePatients")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(List<DoctorPatientListDto>), 200)]
+        [ProducesResponseType(500)]
+        public async Task<ActionResult<List<DoctorPatientListDto>>> GetAvailablePatients()
+        {
+            try
+            {
+                var patients = await _doctorPatientService.GetAvailablePatientsAsync();
+                return Ok(patients);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available patients");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+            }
+        }
+
+        /// <summary>
+        /// Thêm bệnh nhân vào danh sách quản lý của bác sĩ
+        /// </summary>
+        [HttpPost("AssignPatient")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<ActionResult> AssignPatientToDoctor(
+            [FromBody] AssignPatientDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new { message = "Dữ liệu không hợp lệ" });
+                }
+
+                var result = await _doctorPatientService.AssignPatientToDoctorAsync(dto.DoctorId, dto.PatientId);
+
+                if (!result)
+                {
+                    return BadRequest(new { message = "Không thể thêm bệnh nhân" });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning patient to doctor");
                 return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
             }
         }
