@@ -11,7 +11,9 @@ namespace HIV.Interfaces
             int page = 1,
             int pageSize = 8);
 
-        Task<bool> UpdatePatientInfoAsync(int accountId, DoctorPatientUpdateDto dto);
+        Task<List<DoctorPatientListDto>> GetAvailablePatientsAsync();
+
+        Task<bool> AssignPatientToDoctorAsync(int doctorId, int patientId);
 
         Task<DoctorPatientStatsDto> GetDoctorPatientStatsAsync(int doctorId);
 

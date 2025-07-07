@@ -164,7 +164,6 @@ namespace HIV
             builder.Services.AddScoped<IArvService, ArvService>();
             builder.Services.AddScoped<IARVProtocolService, ARVProtocolService>();
             builder.Services.AddScoped<ICustomizedArvProtocolService, CustomizedArvProtocolService>();
-            builder.Services.AddScoped<ICustomizedArvProtocolDetailService, CustomizedArvProtocolDetailService>();
             builder.Services.AddScoped<IDoctorInfoService, DoctorInfoService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             builder.Services.AddScoped<IDoctorMangamentPatient, DoctorPatientService>();

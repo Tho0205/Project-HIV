@@ -9,5 +9,6 @@ namespace HIV.Interfaces
         Task<ExaminationDTO> SaveExaminationAsync(ExaminationFormDTO dto);
         Task<bool> DeleteExaminationAsync(int examId);
         Task<List<object>> GetDoctorsAsync();
+        Task<bool> UpdateExamAsync(int examId, HIVExaminationDto dto);
     }
 }
