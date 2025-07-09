@@ -96,6 +96,54 @@ namespace HIV.Repository
             };
         }
 
+        public async Task<IEnumerable<MedicalRecordDto>> GetByDoctorIdAsync(int doctorId)
+        {
+            return await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Where(m => m.DoctorId == doctorId && m.Status != "DELETED")
+                .Select(m => new MedicalRecordDto
+                {
+                    RecordId = m.RecordId,
+                    PatientId = m.PatientId,
+                    DoctorId = m.DoctorId,
+                    ExamId = m.ExamId,
+                    CustomProtocolId = m.CustomProtocolId,
+                    ExamDate = m.ExamDate,
+                    ExamTime = m.ExamTime,
+                    Summary = m.Summary,
+                    Status = m.Status,
+                    IssuedAt = m.IssuedAt,
+                    DoctorName = m.Doctor.FullName,
+                    PatientName = m.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId)
+        {
+            return await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Where(m => m.PatientId == patientId && m.Status != "DELETED")
+                .Select(m => new MedicalRecordDto
+                {
+                    RecordId = m.RecordId,
+                    PatientId = m.PatientId,
+                    DoctorId = m.DoctorId,
+                    ExamId = m.ExamId,
+                    CustomProtocolId = m.CustomProtocolId,
+                    ExamDate = m.ExamDate,
+                    ExamTime = m.ExamTime,
+                    Summary = m.Summary,
+                    Status = m.Status,
+                    IssuedAt = m.IssuedAt,
+                    DoctorName = m.Doctor.FullName,
+                    PatientName = m.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateAsync(int id, UpdateMedicalRecordDto dto)
         {
             var entity = await _context.MedicalRecords.FindAsync(id);

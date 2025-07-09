@@ -30,6 +30,20 @@ namespace HIV.Controllers
             return Ok(record);
         }
 
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetByDoctorId(int doctorId)
+        {
+            var records = await _service.GetByDoctorIdAsync(doctorId);
+            return Ok(records);
+        }
+
+        [HttpGet("patient/{patientId}")]
+        public async Task<IActionResult> GetByPatientId(int patientId)
+        {
+            var records = await _service.GetByPatientIdAsync(patientId);
+            return Ok(records);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
         {
