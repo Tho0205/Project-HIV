@@ -167,5 +167,87 @@ namespace HIV.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // Phương thức mới để lấy thông tin chi tiết
+        public async Task<MedicalRecordDetailDto?> GetDetailByIdAsync(int id)
+        {
+            var medicalRecord = await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Include(m => m.Examination)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.BaseProtocol)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.Details)
+                        .ThenInclude(d => d.Arv)
+                .FirstOrDefaultAsync(m => m.RecordId == id);
+
+            if (medicalRecord == null) return null;
+
+            var result = new MedicalRecordDetailDto
+            {
+                RecordId = medicalRecord.RecordId,
+                PatientId = medicalRecord.PatientId,
+                DoctorId = medicalRecord.DoctorId,
+                ExamId = medicalRecord.ExamId,
+                CustomProtocolId = medicalRecord.CustomProtocolId,
+                ExamDate = medicalRecord.ExamDate,
+                ExamTime = medicalRecord.ExamTime,
+                Status = medicalRecord.Status,
+                IssuedAt = medicalRecord.IssuedAt,
+                Summary = medicalRecord.Summary,
+                DoctorName = medicalRecord.Doctor?.FullName,
+                PatientName = medicalRecord.Patient?.FullName
+            };
+
+            // Map thông tin Examination
+            if (medicalRecord.Examination != null)
+            {
+                result.Examination = new ExaminationDetailDto
+                {
+                    ExamId = medicalRecord.Examination.ExamId,
+                    Result = medicalRecord.Examination.Result,
+                    Cd4Count = medicalRecord.Examination.Cd4Count,
+                    HivLoad = medicalRecord.Examination.HivLoad,
+                    ExamDate = medicalRecord.Examination.ExamDate,
+                    Status = medicalRecord.Examination.Status,
+                    CreatedAt = medicalRecord.Examination.CreatedAt
+                };
+            }
+
+            // Map thông tin Customized ARV Protocol và các ARV liên quan
+            if (medicalRecord.CustomProtocol != null)
+            {
+                result.CustomizedProtocol = new CustomizedArvProtocolDto
+                {
+                    CustomProtocolId = medicalRecord.CustomProtocol.CustomProtocolId,
+                    Name = medicalRecord.CustomProtocol.Name,
+                    Description = medicalRecord.CustomProtocol.Description,
+                    Status = medicalRecord.CustomProtocol.Status,
+                    BaseProtocolName = medicalRecord.CustomProtocol.BaseProtocol?.Name
+                };
+
+                // Map danh sách ARV trong protocol
+                // Thông tin ARV được lấy từ CustomizedArvProtocolDetail thông qua quan hệ:
+                // MedicalRecord -> CustomizedArvProtocol -> CustomizedArvProtocolDetails -> ARV
+                if (medicalRecord.CustomProtocol.Details != null)
+                {
+                    result.CustomizedProtocol.ArvDetails = medicalRecord.CustomProtocol.Details
+                        .Where(d => d.Arv != null)
+                        .Select(d => new ArvDetailInProtocolDto
+                        {
+                            ArvId = d.ArvId,
+                            ArvName = d.Arv.Name,
+                            ArvDescription = d.Arv.Description,
+                            Dosage = d.Dosage,
+                            UsageInstruction = d.UsageInstruction,
+                            Status = d.Status
+                        })
+                        .ToList();
+                }
+            }
+
+            return result;
+        }
     }
 }

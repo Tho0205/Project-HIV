@@ -66,5 +66,14 @@ namespace HIV.Controllers
             if (!success) return NotFound();
             return NoContent();
         }
+
+        // Endpoint mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
+        [HttpGet("{id}/detail")]
+        public async Task<IActionResult> GetDetail(int id)
+        {
+            var record = await _service.GetDetailByIdAsync(id);
+            if (record == null) return NotFound();
+            return Ok(record);
+        }
     }
 }

@@ -11,5 +11,8 @@ namespace HIV.Interfaces
         Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId);
         Task<bool> UpdateAsync(int id, UpdateMedicalRecordDto dto);
         Task<bool> DeleteAsync(int id);
+
+        // Phương thức mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
+        Task<MedicalRecordDetailDto?> GetDetailByIdAsync(int id);
     }
 }
