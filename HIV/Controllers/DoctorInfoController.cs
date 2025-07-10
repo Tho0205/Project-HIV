@@ -3,6 +3,8 @@ using HIV.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace HIV.Controllers
 {
@@ -20,6 +22,7 @@ namespace HIV.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Staff,Admin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var data = await _service.GetAllAsync();

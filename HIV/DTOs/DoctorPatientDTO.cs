@@ -14,7 +14,7 @@ namespace HIV.DTOs.DoctorPatient
         public DateOnly? Birthdate { get; set; }
         public string Address { get; set; } = string.Empty;
         public string? UserAvatar { get; set; }
-        public string Status { get; set; } = "ACTIVE";
+        public string status { get; set; } = "ACTIVE";
         public int AppointmentCount { get; set; }
         public DateTime? LastAppointmentDate { get; set; }
     }

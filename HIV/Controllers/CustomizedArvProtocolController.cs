@@ -1,57 +1,119 @@
 ﻿using HIV.DTOs.DTOARVs;
 using HIV.Interfaces.ARVinterfaces;
-using HIV.Repository;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class CustomizedArvProtocolController : ControllerBase
+    [ApiController]
+    public class CustomArvProtocolsController : ControllerBase
     {
-        private readonly ICustomizedArvProtocolService _service;
+        private readonly ICustomizedArvProtocolService _protocolService;
 
-        public CustomizedArvProtocolController(ICustomizedArvProtocolService service)
+        public CustomArvProtocolsController(ICustomizedArvProtocolService protocolService)
         {
-            _service = service;
+            _protocolService = protocolService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        /// <summary>
+        /// Get all active patients with their protocols for a specific doctor
+        /// </summary>
+        /// <param name="doctorId">The ID of the doctor</param>
+        /// <returns>List of patients with their protocols</returns>
+        [HttpGet("doctor/{doctorId}/patients")]
+        public async Task<ActionResult<List<PatientWithProtocolDto>>> GetPatientsWithProtocols(int doctorId)
         {
-            var items = await _service.GetAllAsync();
-            return Ok(items);
+            var result = await _protocolService.GetPatientsWithProtocolsAsync(doctorId);
+            return Ok(result);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        /// <summary>
+        /// Get the current active protocol for a patient
+        /// </summary>
+        /// <param name="patientId">The ID of the patient</param>
+        /// <returns>The patient's current protocol details</returns>
+        [HttpGet("patient/{patientId}/current-protocol")]
+        public async Task<ActionResult<FullCustomProtocolDto>> GetPatientCurrentProtocol(int patientId)
         {
-            var item = await _service.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            var protocol = await _protocolService.GetPatientCurrentProtocolAsync(patientId);
+
+            if (protocol == null)
+            {
+                return NotFound($"No active protocol found for patient with ID {patientId}");
+            }
+
+            return Ok(protocol);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(CreateCustomizedArvProtocolDto dto)
+        /// <summary>
+        /// Create a new custom protocol for a patient
+        /// </summary>
+        /// <param name="doctorId">The ID of the creating doctor</param>
+        /// <param name="patientId">The ID of the patient</param>
+        /// <param name="request">The protocol creation request</param>
+        /// <returns>The created protocol details</returns>
+        [HttpPost("doctor/{doctorId}/patient/{patientId}")]
+        public async Task<ActionResult<FullCustomProtocolDto>> CreateCustomProtocol(
+            int doctorId,
+            int patientId,
+            [FromBody] CreateCustomProtocolRequest request)
         {
-            var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.CustomProtocolId }, created);
+            try
+            {
+                var result = await _protocolService.CreateCustomProtocolAsync(doctorId, patientId, request);
+                return CreatedAtAction(
+                    nameof(GetPatientCurrentProtocol),
+                    new { patientId = patientId },
+                    result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while creating the protocol: {ex.Message}");
+            }
         }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, UpdateCustomizedArvProtocolDto dto)
+        /// <summary>
+        /// Update a patient's protocol (switch to standard or activate existing custom)
+        /// </summary>
+        /// <param name="patientId">The ID of the patient</param>
+        /// <param name="request">The update request</param>
+        /// <returns>True if successful</returns>
+        [HttpPut("patient/{patientId}/update-protocol")]
+        public async Task<IActionResult> UpdatePatientProtocol(
+            int patientId,
+            [FromBody] UpdatePatientProtocolRequest request)
         {
-            var updated = await _service.UpdateAsync(id, dto);
-            if (!updated) return NotFound();
-            return NoContent();
+            try
+            {
+                var success = await _protocolService.UpdatePatientProtocolAsync(patientId, request);
+
+                if (!success)
+                {
+                    return BadRequest("Failed to update patient protocol. Check if the protocol exists.");
+                }
+
+                return Ok(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating the protocol: {ex.Message}");
+            }
         }
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        /// <summary>
+        /// Get the protocol history for a patient
+        /// </summary>
+        /// <param name="patientId">The ID of the patient</param>
+        /// <returns>List of all protocols the patient has had</returns>
+        [HttpGet("patient/{patientId}/history")]
+        public async Task<ActionResult<List<FullCustomProtocolDto>>> GetPatientProtocolHistory(int patientId)
         {
-            var deleted = await _service.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var history = await _protocolService.GetPatientProtocolHistoryAsync(patientId);
+            return Ok(history);
         }
     }
 }

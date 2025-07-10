@@ -14,7 +14,3 @@ public partial class Arv
     public ICollection<ARVProtocolDetail> ProtocolDetails { get; set; }
     public ICollection<CustomizedArvProtocolDetail> CustomProtocolDetails { get; set; }
 }
-
-    //status NVARCHAR(20) DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'INACTIVE', 'DELETED', 'DISCONTINUED')),
-    //created_at DATETIME DEFAULT GETDATE(),
-    //updated_at DATETIME DEFAULT GETDATE()

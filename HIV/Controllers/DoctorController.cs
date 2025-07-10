@@ -109,7 +109,7 @@ namespace HIV.Controllers
             [FromQuery] string sortBy = "full_name",
             [FromQuery] string order = "asc",
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 8)
+            [FromQuery] int pageSize = 10)
         {
             try
             {
@@ -119,7 +119,7 @@ namespace HIV.Controllers
                 }
 
                 if (page < 1) page = 1;
-                if (pageSize < 1 || pageSize > 100) pageSize = 8;
+                if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
                 var result = await _doctorPatientService.GetDoctorPatientsAsync(
                     doctorId, scheduleDate, hasScheduleOnly, sortBy, order, page, pageSize);

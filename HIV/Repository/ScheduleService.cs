@@ -148,5 +148,39 @@ namespace DemoSWP391.Services
 
             return schedules;
         }
+
+        public async Task<List<ScheduleDto>> GetActiveSchedulesAsync(DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            var query = _context.Schedules
+                .Include(s => s.Appointments)
+                    .ThenInclude(a => a.Patient)
+                .Include(s => s.Doctor)
+                .Where(s => s.Status == "ACTIVE"); // Chỉ lấy schedule có status ACTIVE
+
+            if (fromDate.HasValue)
+                query = query.Where(s => s.ScheduledTime >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(s => s.ScheduledTime <= toDate.Value);
+
+            var schedules = await query
+                .OrderBy(s => s.ScheduledTime)
+                .Select(s => new ScheduleDto
+                {
+                    ScheduleId = s.ScheduleId,
+                    ScheduledTime = s.ScheduledTime,
+                    Room = s.Room,
+                    HasAppointment = s.Appointments.Any(),
+                    PatientName = s.Appointments.FirstOrDefault() != null
+                        ? s.Appointments.FirstOrDefault()!.Patient!.FullName
+                        : null,
+                    AppointmentNote = s.Appointments.FirstOrDefault() != null
+                        ? s.Appointments.FirstOrDefault()!.Note
+                        : null
+                })
+                .ToListAsync();
+
+            return schedules;
+        }
     }
 }
