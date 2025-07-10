@@ -178,27 +178,18 @@ namespace HIV.Controllers
         [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(PatientHistoryDto), 200)]
         [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<PatientHistoryDto>> GetPatientHistory(
-            int patientId,
-            [FromQuery] int doctorId)
+        public async Task<ActionResult<PatientHistoryDto>> GetPatientHistory(int patientId)
         {
             try
             {
-                if (patientId <= 0 || doctorId <= 0)
+                if (patientId <= 0)
                 {
-                    return BadRequest(new { message = "PatientId và DoctorId không hợp lệ" });
+                    return BadRequest(new { message = "PatientId không hợp lệ" });
                 }
 
-                // Kiểm tra quyền truy cập
-                var hasAccess = await _doctorPatientService.CanDoctorAccessPatientAsync(doctorId, patientId);
-                if (!hasAccess)
-                {
-                    return StatusCode(403, new { message = "Bạn không có quyền truy cập thông tin bệnh nhân này" });
-                }
-
-                var history = await _doctorPatientService.GetPatientHistoryAsync(patientId, doctorId);
+                // Gọi service không có doctorId
+                var history = await _doctorPatientService.GetPatientHistoryAsync(patientId);
                 return Ok(history);
             }
             catch (ApplicationException ex)
