@@ -18,5 +18,7 @@ namespace HIV.Interfaces
         Task<bool> ConfirmAppointment(int appointmentId, string? note = null);
         Task<bool> CompleteAppointment(int appointmentId, string? note = null);
         Task<AppointmentDTO> GetAppointmentById(int appointmentId);
+        Task<List<ScheduleSimpleDTO>> GetAllScheduleOfDoctor(int id_doctor);
+        Task CreateRelatedRecordsAsync(int appointmentId);
     }
 }

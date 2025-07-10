@@ -41,7 +41,13 @@ namespace HIV.Controllers
             return Ok(schedules);
         
         }
+        [HttpGet("GetAllSchedule/{id:int}")]
+        public async Task<ActionResult<List<ScheduleSimpleDTO>>> GetAllScheduleDoctor([FromRoute] int id)
+        {
+            var schedules = await _appService.GetAllScheduleOfDoctor(id);
+            return Ok(schedules);
 
+        }
         [HttpGet("patient/{id:int}")]
 
         public async Task<IActionResult> GetInforPatient(int id)

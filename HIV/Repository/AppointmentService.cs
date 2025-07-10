@@ -32,9 +32,172 @@ namespace HIV.Repository
                 ScheduleId = u.ScheduleId,
                 ScheduledTime = u.ScheduledTime,
                 Room = u.Room,
+                Status = u.Status
             }).ToListAsync();
         }
+        public async Task<List<ScheduleSimpleDTO>> GetAllScheduleOfDoctor(int id_doctor)
+        {
+            return await _context.Schedules.Where(u => u.DoctorId == id_doctor).Select(u => new ScheduleSimpleDTO
+            {
+                ScheduleId = u.ScheduleId,
+                ScheduledTime = u.ScheduledTime,
+                Room = u.Room,
+                Status = u.Status
+            }).ToListAsync();
+        }
+        public async Task CreateRelatedRecordsAsync(int appointmentId)
+        {
+            var appointment = await _context.Appointments.FindAsync(appointmentId);
+            if (appointment == null)
+            {
+                Console.WriteLine($"❌ Appointment {appointmentId} not found");
+                return;
+            }
 
+            Console.WriteLine($"🚀 Creating related records for Appointment {appointmentId}");
+
+            try
+            {
+                // 1. ✅ Examination - GIỮ NGUYÊN
+                Console.WriteLine($"🏥 Creating Examination...");
+                try
+                {
+                    string examStatus = "ACTIVE";
+                    var existingExam = await _context.Examinations.FirstOrDefaultAsync();
+                    if (existingExam != null && !string.IsNullOrEmpty(existingExam.Status))
+                    {
+                        examStatus = existingExam.Status;
+                    }
+
+                    var examination = new Examination
+                    {
+                        PatientId = appointment.PatientId,
+                        DoctorId = appointment.DoctorId,
+                        ExamDate = DateOnly.FromDateTime(appointment.AppointmentDate),
+                        Result = "Scheduled for examination",
+                        Cd4Count = null,
+                        HivLoad = null,
+                        Status = examStatus,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Examinations.Add(examination);
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"✅ Examination created successfully");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Examination failed: {ex.Message}");
+                }
+
+                // 2. 🔍 DEBUG CustomizedArvProtocol chi tiết
+                Console.WriteLine($"💊 DEBUG: Starting CustomizedArvProtocol creation...");
+
+                try
+                {
+                    // Kiểm tra số lượng records trước khi insert
+                    var countBefore = await _context.Database
+                        .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
+                        .FirstOrDefaultAsync();
+                    Console.WriteLine($"📊 Records before insert: {countBefore}");
+
+                    // Kiểm tra giá trị sẽ insert
+                    Console.WriteLine($"📝 Values to insert:");
+                    Console.WriteLine($"   DoctorId: {appointment.DoctorId}");
+                    Console.WriteLine($"   PatientId: {appointment.PatientId}");
+                    Console.WriteLine($"   BaseProtocolId: NULL");
+                    Console.WriteLine($"   Name: Protocol for Appointment #{appointmentId}");
+                    Console.WriteLine($"   Description: Auto-generated from appointment booking");
+                    Console.WriteLine($"   Status: ACTIVE");
+
+                    // Thực hiện insert với logging chi tiết
+                    Console.WriteLine($"🚀 Executing INSERT statement...");
+                    var protocolSql = @"
+                INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, BaseProtocolId, Name, Description, Status)
+                VALUES ({0}, {1}, {2}, {3}, {4}, {5})";
+
+                    var rowsAffected = await _context.Database.ExecuteSqlRawAsync(protocolSql,
+                        appointment.DoctorId,
+                        appointment.PatientId,
+                        DBNull.Value,
+                        $"Protocol for Appointment #{appointmentId}",
+                        "Auto-generated from appointment booking",
+                        "ACTIVE");
+
+                    Console.WriteLine($"📊 SQL ExecuteSqlRawAsync returned: {rowsAffected} rows affected");
+
+                    // Kiểm tra số lượng records sau khi insert
+                    var countAfter = await _context.Database
+                        .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
+                        .FirstOrDefaultAsync();
+                    Console.WriteLine($"📊 Records after insert: {countAfter}");
+
+                    if (countAfter > countBefore)
+                    {
+                        Console.WriteLine($"✅ SUCCESS: {countAfter - countBefore} new record(s) inserted!");
+
+                        // Lấy record vừa tạo để verify
+                        var newRecord = await _context.Database
+                            .SqlQueryRaw<int>($"SELECT TOP 1 CustomProtocolId as Value FROM CustomizedARV_Protocol WHERE Name = 'Protocol for Appointment #{appointmentId}' ORDER BY CustomProtocolId DESC")
+                            .FirstOrDefaultAsync();
+                        Console.WriteLine($"🆕 New record ID: {newRecord}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ WARNING: No new records detected despite rowsAffected = {rowsAffected}");
+
+                        // Kiểm tra xem có constraint nào block không
+                        Console.WriteLine($"🔍 Checking for potential constraints...");
+
+                        // Kiểm tra foreign key constraints
+                        var doctorExists = await _context.Users.AnyAsync(u => u.UserId == appointment.DoctorId);
+                        var patientExists = await _context.Users.AnyAsync(u => u.UserId == appointment.PatientId);
+
+                        Console.WriteLine($"🔍 Doctor ID {appointment.DoctorId} exists: {doctorExists}");
+                        Console.WriteLine($"🔍 Patient ID {appointment.PatientId} exists: {patientExists}");
+
+                        if (!doctorExists || !patientExists)
+                        {
+                            Console.WriteLine($"❌ Foreign key constraint issue detected!");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Protocol creation failed: {ex.Message}");
+                    Console.WriteLine($"🔍 Inner exception: {ex.InnerException?.Message}");
+                    Console.WriteLine($"🔍 Stack trace: {ex.StackTrace}");
+
+                    // Thử với insert đơn giản nhất có thể
+                    try
+                    {
+                        Console.WriteLine($"🔄 Trying minimal insert...");
+
+                        var minimalSql = @"
+                    INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, Name, Status)
+                    VALUES ({0}, {1}, {2}, {3})";
+
+                        var minimalRows = await _context.Database.ExecuteSqlRawAsync(minimalSql,
+                            appointment.DoctorId,
+                            appointment.PatientId,
+                            $"Test Protocol {appointmentId}",
+                            "ACTIVE");
+
+                        Console.WriteLine($"✅ Minimal insert successful: {minimalRows} rows");
+                    }
+                    catch (Exception minEx)
+                    {
+                        Console.WriteLine($"❌ Minimal insert failed: {minEx.Message}");
+                    }
+                }
+
+                Console.WriteLine($"🎉 CreateRelatedRecordsAsync completed for Appointment {appointmentId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 Unexpected error: {ex.Message}");
+            }
+        }
         public async Task<CreateAppointmentDTO> CreateAppointment(CreateAppointmentDTO dto)
         {
             try
@@ -61,7 +224,7 @@ namespace HIV.Repository
                     DoctorId = dto.doctorId,
                     Note = dto.Note,
                     IsAnonymous = (bool)dto.IsAnonymous,
-                    Status = "CONFIRMED", // Changed from COMPLETED to CONFIRMED as default
+                    Status = "SCHEDULED", // Changed from COMPLETED to CONFIRMED as default
                     CreatedAt = DateTime.Now,
                     AppointmentDate = dto.AppointmentDate
                 };
@@ -70,7 +233,7 @@ namespace HIV.Repository
                 var sche = await _context.Schedules.FindAsync(appoint.ScheduleId);
                 if (sche != null)
                 {
-                    sche.Status = "ACTIVE";
+                    sche.Status = "INACTIVE";
                 }
 
                 await _context.SaveChangesAsync();
@@ -134,6 +297,11 @@ namespace HIV.Repository
             }
 
             appoint.Status = "CANCELLED";
+            var sche = await _context.Schedules.FindAsync(appoint.ScheduleId);
+            if (sche != null)
+            {
+                sche.Status = "ACTIVE";
+            }
             await _context.SaveChangesAsync();
             return true;
         }
@@ -211,6 +379,11 @@ namespace HIV.Repository
                 //}
 
                 appointment.Status = dto.Status;
+                if(appointment.Status == "CONFIRMED")
+                {
+                    await CreateRelatedRecordsAsync(appointment.AppointmentId);
+
+                }
                 if (!string.IsNullOrEmpty(dto.Note))
                 {
                     appointment.Note = dto.Note;
@@ -289,5 +462,6 @@ namespace HIV.Repository
         //    return validTransitions.ContainsKey(currentStatus) &&
         //           validTransitions[currentStatus].Contains(newStatus);
         //}
+
     }
 }
