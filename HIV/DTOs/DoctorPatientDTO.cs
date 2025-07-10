@@ -19,22 +19,12 @@ namespace HIV.DTOs.DoctorPatient
         public DateTime? LastAppointmentDate { get; set; }
     }
 
-    public class AssignPatientDto
-    {
-        [Required]
-        public int DoctorId { get; set; }
-
-        [Required]
-        public int PatientId { get; set; }
-    }
-
     public class DoctorPatientStatsDto
     {
         public int TotalPatients { get; set; }
         public int TodayAppointments { get; set; }
         public int ControlledPatients { get; set; }
         public int UnstablePatients { get; set; }
-
     }
 
     public class DoctorPatientsResponseDto
@@ -60,6 +50,7 @@ namespace HIV.DTOs.DoctorPatient
         public string? Note { get; set; }
         public string? Room { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? DoctorName { get; set; }
     }
 
     public class ExaminationHistoryDto
@@ -70,5 +61,6 @@ namespace HIV.DTOs.DoctorPatient
         public int? Cd4Count { get; set; }
         public int? HivLoad { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? DoctorName { get; set; }
     }
 }
