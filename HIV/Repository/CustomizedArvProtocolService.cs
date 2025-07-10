@@ -253,7 +253,6 @@ namespace HIV.Repository
 
             await _context.SaveChangesAsync();
 
-            await _medicalRecordService.UpdateCustomProtocolReference(protocolId);
             return true;
         }
 

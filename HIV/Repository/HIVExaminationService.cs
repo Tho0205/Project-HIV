@@ -160,7 +160,6 @@ namespace HIV.Repository
 
             await _context.SaveChangesAsync();
 
-            await _medicalRecordService.UpdateExamReference(examId);
             return true;
         }
 
