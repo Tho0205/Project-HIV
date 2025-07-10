@@ -64,7 +64,7 @@ namespace HIV.Controllers
         /// </summary>
         [HttpPost]
         //[AllowAnonymous]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Roles = "Doctor,Staff")]
         public async Task<ActionResult<ApiResponse<ScheduleDto>>> CreateSchedule([FromBody] CreateScheduleDto dto)
         {
             try
