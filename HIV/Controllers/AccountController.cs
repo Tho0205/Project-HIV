@@ -1,5 +1,4 @@
-﻿
-using HIV.DTOs;
+﻿using HIV.DTOs;
 using HIV.Interfaces;
 using HIV.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +39,7 @@ namespace WebAPITest.Controllers
             return User.FindFirst(ClaimTypes.Role)?.Value ?? "";
         }
 
-        // GET: api/Account
+         //GET: api/Account
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
@@ -52,7 +51,7 @@ namespace WebAPITest.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<object>> Login([FromBody] DTOLogin login)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == login.identifier || a.Username == login.identifier);
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == login.identifier.Trim() || a.Username == login.identifier.Trim());
             if (account == null)
             {
                 return BadRequest(new { title = "Account incorrect." });
@@ -60,7 +59,9 @@ namespace WebAPITest.Controllers
 
             if (account.PasswordHash != login.password_hash)
             {
-                return BadRequest(new { title = "Password incorrect." });
+                return BadRequest("Account incorrect.");
+
+                //return BadRequest(new { title = "Password incorrect." });
             }
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
@@ -172,7 +173,7 @@ namespace WebAPITest.Controllers
         }
 
         [HttpPut("Update/{id}")]
-        [Authorize(Roles = "Patient")]
+        [Authorize(Roles = "Patient,Doctor")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -183,6 +184,7 @@ namespace WebAPITest.Controllers
 
             var account = await _context.Accounts
                 .Include(a => a.User)
+                .Include(a => a.User.DoctorInfo)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
             if (account == null)
             {
@@ -195,6 +197,7 @@ namespace WebAPITest.Controllers
             account.User.Role = updateinfo.role;
             account.User.Address = updateinfo.address;
             account.User.UserAvatar = updateinfo.user_avatar;
+            account.User.DoctorInfo.DoctorAvatar = updateinfo.user_avatar;
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -202,7 +205,7 @@ namespace WebAPITest.Controllers
 
 
         [HttpPut("ChangePass/{id}")]
-        [Authorize(Roles = "Patient")]
+        [Authorize(Roles = "Patient,Doctor")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
