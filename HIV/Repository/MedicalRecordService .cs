@@ -96,6 +96,54 @@ namespace HIV.Repository
             };
         }
 
+        public async Task<IEnumerable<MedicalRecordDto>> GetByDoctorIdAsync(int doctorId)
+        {
+            return await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Where(m => m.DoctorId == doctorId && m.Status != "DELETED")
+                .Select(m => new MedicalRecordDto
+                {
+                    RecordId = m.RecordId,
+                    PatientId = m.PatientId,
+                    DoctorId = m.DoctorId,
+                    ExamId = m.ExamId,
+                    CustomProtocolId = m.CustomProtocolId,
+                    ExamDate = m.ExamDate,
+                    ExamTime = m.ExamTime,
+                    Summary = m.Summary,
+                    Status = m.Status,
+                    IssuedAt = m.IssuedAt,
+                    DoctorName = m.Doctor.FullName,
+                    PatientName = m.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId)
+        {
+            return await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Where(m => m.PatientId == patientId && m.Status != "DELETED")
+                .Select(m => new MedicalRecordDto
+                {
+                    RecordId = m.RecordId,
+                    PatientId = m.PatientId,
+                    DoctorId = m.DoctorId,
+                    ExamId = m.ExamId,
+                    CustomProtocolId = m.CustomProtocolId,
+                    ExamDate = m.ExamDate,
+                    ExamTime = m.ExamTime,
+                    Summary = m.Summary,
+                    Status = m.Status,
+                    IssuedAt = m.IssuedAt,
+                    DoctorName = m.Doctor.FullName,
+                    PatientName = m.Patient.FullName
+                })
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateAsync(int id, UpdateMedicalRecordDto dto)
         {
             var entity = await _context.MedicalRecords.FindAsync(id);
@@ -120,86 +168,86 @@ namespace HIV.Repository
             return true;
         }
 
-        public async Task<IEnumerable<MedicalRecordDto>> GetByDoctorIdAsync(int doctorId)
+        // Phương thức mới để lấy thông tin chi tiết
+        public async Task<MedicalRecordDetailDto?> GetDetailByIdAsync(int id)
         {
-            return await _context.MedicalRecords
-                .Where(r => r.DoctorId == doctorId)
-                .Include(r => r.Patient)
-                .Include(r => r.Doctor)
-                .Select(r => new MedicalRecordDto
-                {
-                    RecordId = r.RecordId,
-                    PatientId = r.PatientId,
-                    DoctorId = r.DoctorId,
-                    ExamId = r.ExamId,
-                    CustomProtocolId = r.CustomProtocolId,
-                    ExamDate = r.ExamDate,
-                    ExamTime = r.ExamTime,
-                    Status = r.Status,
-                    IssuedAt = r.IssuedAt,
-                    Summary = r.Summary,
-                    DoctorName = r.Doctor.FullName,
-                    PatientName = r.Patient.FullName
-                })
-                .ToListAsync();
-        }
+            var medicalRecord = await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Include(m => m.Examination)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.BaseProtocol)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.Details)
+                        .ThenInclude(d => d.Arv)
+                .FirstOrDefaultAsync(m => m.RecordId == id);
 
-        public async Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId)
-        {
-            return await _context.MedicalRecords
-                .Where(r => r.PatientId == patientId)
-                .Include(r => r.Doctor)
-                .Include(r => r.Patient)
-                .Select(r => new MedicalRecordDto
-                {
-                    RecordId = r.RecordId,
-                    PatientId = r.PatientId,
-                    DoctorId = r.DoctorId,
-                    ExamId = r.ExamId,
-                    CustomProtocolId = r.CustomProtocolId,
-                    ExamDate = r.ExamDate,
-                    ExamTime = r.ExamTime,
-                    Status = r.Status,
-                    IssuedAt = r.IssuedAt,
-                    Summary = r.Summary,
-                    DoctorName = r.Doctor.FullName,
-                    PatientName = r.Patient.FullName
-                })
-                .ToListAsync();
-        }
+            if (medicalRecord == null) return null;
 
-        public async Task<bool> UpdateExamReference(int examId)
-        {
-            var records = await _context.MedicalRecords
-                .Where(r => r.ExamId == examId)
-                .ToListAsync();
-
-            if (!records.Any()) return false;
-
-            foreach (var record in records)
+            var result = new MedicalRecordDetailDto
             {
-                record.ExamId = examId;
+                RecordId = medicalRecord.RecordId,
+                PatientId = medicalRecord.PatientId,
+                DoctorId = medicalRecord.DoctorId,
+                ExamId = medicalRecord.ExamId,
+                CustomProtocolId = medicalRecord.CustomProtocolId,
+                ExamDate = medicalRecord.ExamDate,
+                ExamTime = medicalRecord.ExamTime,
+                Status = medicalRecord.Status,
+                IssuedAt = medicalRecord.IssuedAt,
+                Summary = medicalRecord.Summary,
+                DoctorName = medicalRecord.Doctor?.FullName,
+                PatientName = medicalRecord.Patient?.FullName
+            };
+
+            // Map thông tin Examination
+            if (medicalRecord.Examination != null)
+            {
+                result.Examination = new ExaminationDetailDto
+                {
+                    ExamId = medicalRecord.Examination.ExamId,
+                    Result = medicalRecord.Examination.Result,
+                    Cd4Count = medicalRecord.Examination.Cd4Count,
+                    HivLoad = medicalRecord.Examination.HivLoad,
+                    ExamDate = medicalRecord.Examination.ExamDate,
+                    Status = medicalRecord.Examination.Status,
+                    CreatedAt = medicalRecord.Examination.CreatedAt
+                };
             }
 
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> UpdateCustomProtocolReference(int customProtocolId)
-        {
-            var records = await _context.MedicalRecords
-                .Where(r => r.CustomProtocolId == customProtocolId)
-                .ToListAsync();
-
-            if (!records.Any()) return false;
-
-            foreach (var record in records)
+            // Map thông tin Customized ARV Protocol và các ARV liên quan
+            if (medicalRecord.CustomProtocol != null)
             {
-                record.CustomProtocolId = customProtocolId;
+                result.CustomizedProtocol = new CustomizedArvProtocolDto
+                {
+                    CustomProtocolId = medicalRecord.CustomProtocol.CustomProtocolId,
+                    Name = medicalRecord.CustomProtocol.Name,
+                    Description = medicalRecord.CustomProtocol.Description,
+                    Status = medicalRecord.CustomProtocol.Status,
+                    BaseProtocolName = medicalRecord.CustomProtocol.BaseProtocol?.Name
+                };
+
+                // Map danh sách ARV trong protocol
+                // Thông tin ARV được lấy từ CustomizedArvProtocolDetail thông qua quan hệ:
+                // MedicalRecord -> CustomizedArvProtocol -> CustomizedArvProtocolDetails -> ARV
+                if (medicalRecord.CustomProtocol.Details != null)
+                {
+                    result.CustomizedProtocol.ArvDetails = medicalRecord.CustomProtocol.Details
+                        .Where(d => d.Arv != null)
+                        .Select(d => new ArvDetailInProtocolDto
+                        {
+                            ArvId = d.ArvId,
+                            ArvName = d.Arv.Name,
+                            ArvDescription = d.Arv.Description,
+                            Dosage = d.Dosage,
+                            UsageInstruction = d.UsageInstruction,
+                            Status = d.Status
+                        })
+                        .ToList();
+                }
             }
 
-            await _context.SaveChangesAsync();
-            return true;
+            return result;
         }
     }
 }

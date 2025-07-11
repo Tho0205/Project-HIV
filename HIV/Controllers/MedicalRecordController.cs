@@ -30,6 +30,20 @@ namespace HIV.Controllers
             return Ok(record);
         }
 
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetByDoctorId(int doctorId)
+        {
+            var records = await _service.GetByDoctorIdAsync(doctorId);
+            return Ok(records);
+        }
+
+        [HttpGet("patient/{patientId}")]
+        public async Task<IActionResult> GetByPatientId(int patientId)
+        {
+            var records = await _service.GetByPatientIdAsync(patientId);
+            return Ok(records);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
         {
@@ -53,18 +67,13 @@ namespace HIV.Controllers
             return NoContent();
         }
 
-        [HttpGet("patient/{patientId}")]
-        public async Task<IActionResult> GetByPatient(int patientId)
+        // Endpoint mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
+        [HttpGet("{id}/detail")]
+        public async Task<IActionResult> GetDetail(int id)
         {
-            var records = await _service.GetByPatientIdAsync(patientId);
-            return Ok(records);
-        }
-
-        [HttpGet("doctor/{doctorId}")]
-        public async Task<IActionResult> GetByDoctor(int doctorId)
-        {
-            var records = await _service.GetByDoctorIdAsync(doctorId);
-            return Ok(records);
+            var record = await _service.GetDetailByIdAsync(id);
+            if (record == null) return NotFound();
+            return Ok(record);
         }
     }
 }
