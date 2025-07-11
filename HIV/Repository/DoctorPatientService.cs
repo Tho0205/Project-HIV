@@ -116,7 +116,7 @@ namespace HIV.Repository
                         Birthdate = account.User.Birthdate,
                         Address = account.User.Address ?? "",
                         UserAvatar = account.User.UserAvatar,
-                        status = account.User.Status,
+                        Status = account.User.Status,
                         AppointmentCount = _context.Appointments
                             .Count(app => app.PatientId == account.User.UserId && app.DoctorId == doctorUser.UserId),
                         LastAppointmentDate = _context.Appointments
@@ -478,7 +478,7 @@ namespace HIV.Repository
                         Birthdate = a.User.Birthdate,
                         Address = a.User.Address ?? "",
                         UserAvatar = a.User.UserAvatar,
-                        status = a.User.Status,
+                        Status = a.User.Status,
                         AppointmentCount = _context.Appointments
                             .Count(app => app.PatientId == patientUser.UserId && app.DoctorId == doctorUser.UserId),
                         LastAppointmentDate = _context.Appointments

@@ -48,7 +48,7 @@ namespace HIV.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data.ProtocolId }, result.Data);
         }
 
-        [HttpPost("create-with-details")]
+        [HttpPost("create-details")]
         public async Task<IActionResult> CreateWithDetails([FromBody] CreateARVProtocolWithDetailsDto dto)
         {
             var result = await _service.CreateWithDetailsAsync(dto);
@@ -64,8 +64,14 @@ namespace HIV.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateARVProtocolDto dto)
         {
+
+
+
+
             var currentProtocol = await _service.GetFullProtocolByIdAsync(id);
             if (!currentProtocol.IsSuccess) return NotFound(currentProtocol.Errors);
+
+
 
             var result = await _service.UpdateProtocolWithDetailsAsync(id, new UpdateARVProtocolWithDetailsDto
             {
@@ -83,6 +89,7 @@ namespace HIV.Controllers
             });
 
             if (!result.IsSuccess) return BadRequest(result.Errors);
+
 
             return Ok(result.Data);
         }
@@ -125,6 +132,8 @@ namespace HIV.Controllers
 
             var result = await _service.UpdateProtocolDetailAsync(protocolId, detailId, dto);
             if (!result.IsSuccess) return BadRequest(result.Errors);
+
+
             return Ok(result.Data);
         }
 
