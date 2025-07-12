@@ -21,7 +21,5 @@ namespace HIV.DTOs
         public string address { get; set; }
 
         public string? user_avatar { get; set; }
-
-
     }
 }

@@ -22,7 +22,6 @@ public class AppDbContext : DbContext
     public DbSet<CustomizedArvProtocol> CustomizedARVProtocols { get; set; }
     public DbSet<CustomizedArvProtocolDetail> CustomizedARVProtocolDetails { get; set; }
     public DbSet<MedicalRecord> MedicalRecords { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -73,6 +73,7 @@ namespace HIV.Repository
 
         public async Task<ServiceResult<ARVProtocolDto>> CreateWithDetailsAsync(CreateARVProtocolWithDetailsDto dto)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 // Validate input
@@ -85,7 +86,7 @@ namespace HIV.Repository
                 if (dto.Details == null || !dto.Details.Any())
                     return ServiceResult<ARVProtocolDto>.Failure("Protocol phải có ít nhất một ARV");
 
-                // Validate ARVs
+                // Validate ARVs exist
                 var arvIds = dto.Details.Select(d => d.ArvId).Distinct().ToList();
                 var existingArvs = await _context.ARVs
                     .Where(a => arvIds.Contains(a.ArvId))
@@ -96,46 +97,44 @@ namespace HIV.Repository
                 if (invalidArvIds.Any())
                     return ServiceResult<ARVProtocolDto>.Failure($"Không tìm thấy ARV với ID: {string.Join(", ", invalidArvIds)}");
 
-                // Create new protocol
+                // Create protocol first (without details)
                 var protocol = new ARVProtocol
                 {
                     Name = dto.Name.Trim(),
                     Description = dto.Description?.Trim(),
-                    Status = dto.Status,
-                    Details = dto.Details.Select(d => new ARVProtocolDetail
-                    {
-                        ArvId = d.ArvId,
-                        Dosage = d.Dosage.Trim(),
-                        UsageInstruction = d.UsageInstruction?.Trim(),
-                        Status = "ACTIVE"
-                    }).ToList()
+                    Status = dto.Status
                 };
 
                 _context.ARVProtocols.Add(protocol);
+                await _context.SaveChangesAsync(); // Save to get ProtocolId
+
+                // Create details separately to avoid complex SQL generation
+                var details = new List<ARVProtocolDetail>();
+                foreach (var detailDto in dto.Details)
+                {
+                    var detail = new ARVProtocolDetail
+                    {
+                        ProtocolId = protocol.ProtocolId,
+                        ArvId = detailDto.ArvId,
+                        Dosage = detailDto.Dosage?.Trim(),
+                        UsageInstruction = detailDto.UsageInstruction?.Trim(),
+                        Status = "ACTIVE"
+                    };
+                    details.Add(detail);
+                }
+
+                _context.ARVProtocolDetails.AddRange(details);
                 await _context.SaveChangesAsync();
 
-                // Return result
-                var result = new ARVProtocolDto
-                {
-                    ProtocolId = protocol.ProtocolId,
-                    Name = protocol.Name,
-                    Description = protocol.Description,
-                    Status = protocol.Status,
-                    Details = protocol.Details.Select(d => new ARVProDetailDto
-                    {
-                        DetailId = d.Id,
-                        ArvId = d.ArvId,
-                        ArvName = d.Arv?.Name,
-                        Dosage = d.Dosage,
-                        UsageInstruction = d.UsageInstruction,
-                        Status = d.Status
-                    }).ToList()
-                };
+                await transaction.CommitAsync();
 
-                return ServiceResult<ARVProtocolDto>.Success(result);
+                // Load the complete protocol with details
+                var result = await GetFullProtocolByIdAsync(protocol.ProtocolId);
+                return result;
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 return ServiceResult<ARVProtocolDto>.Failure($"Lỗi khi tạo protocol: {ex.Message}");
             }
         }
