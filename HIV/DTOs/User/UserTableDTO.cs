@@ -18,6 +18,8 @@ namespace HIV.DTOs
 
         public string? Role { get; set; }
 
+        public string? UserAvatar { get; set; }
+
         public virtual List<ScheduleSimpleDTO>? Schedules { get; set; }
 
     }

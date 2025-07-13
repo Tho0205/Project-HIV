@@ -197,7 +197,10 @@ namespace WebAPITest.Controllers
             account.User.Role = updateinfo.role;
             account.User.Address = updateinfo.address;
             account.User.UserAvatar = updateinfo.user_avatar;
-            account.User.DoctorInfo.DoctorAvatar = updateinfo.user_avatar;
+            if (account.User.DoctorInfo != null)
+            {
+                account.User.DoctorInfo.DoctorAvatar = updateinfo.user_avatar;
+            }
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -248,7 +251,7 @@ namespace WebAPITest.Controllers
 
             // Xóa file avatar cũ nếu có
             var oldFileName = account.User.UserAvatar;
-            if (!string.IsNullOrEmpty(oldFileName) && oldFileName.ToLower() != "patient.png")
+            if (!string.IsNullOrEmpty(oldFileName) && oldFileName.ToLower() != "patient.png" && oldFileName.ToLower() != "doctor.png")
             {
                 var oldFilePath = Path.Combine(uploadFolder, oldFileName);
                 if (System.IO.File.Exists(oldFilePath))

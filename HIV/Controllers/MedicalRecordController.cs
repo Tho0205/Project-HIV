@@ -1,5 +1,6 @@
 ﻿using HIV.DTOs;
 using HIV.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HIV.Controllers
@@ -16,6 +17,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetAll()
         {
             var records = await _service.GetAllAsync();
@@ -23,6 +25,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetById(int id)
         {
             var record = await _service.GetByIdAsync(id);
@@ -31,6 +34,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("doctor/{doctorId}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetByDoctorId(int doctorId)
         {
             var records = await _service.GetByDoctorIdAsync(doctorId);
@@ -38,6 +42,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("patient/{patientId}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetByPatientId(int patientId)
         {
             var records = await _service.GetByPatientIdAsync(patientId);
@@ -45,6 +50,7 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
         {
             var record = await _service.CreateAsync(dto);
@@ -52,6 +58,7 @@ namespace HIV.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> Update(int id, UpdateMedicalRecordDto dto)
         {
             var success = await _service.UpdateAsync(id, dto);
@@ -60,6 +67,7 @@ namespace HIV.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _service.DeleteAsync(id);
@@ -69,6 +77,7 @@ namespace HIV.Controllers
 
         // Endpoint mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
         [HttpGet("{id}/detail")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetDetail(int id)
         {
             var record = await _service.GetDetailByIdAsync(id);
