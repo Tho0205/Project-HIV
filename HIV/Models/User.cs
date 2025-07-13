@@ -38,5 +38,6 @@ public partial class User
 
     public ICollection<MedicalRecord> MedicalRecordsAsDoctor { get; set; }
     public ICollection<MedicalRecord> MedicalRecordsAsPatient { get; set; }
+    public ICollection<Notification> Notifications { get; set; }
 
 }
