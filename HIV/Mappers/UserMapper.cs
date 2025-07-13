@@ -17,6 +17,7 @@ namespace HIV.Mappers
                 Gender = dto.Gender,
                 Birthdate = dto.Birthdate,
                 Role = dto.Role,
+                UserAvatar = dto.UserAvatar,
                 //Appointments = dto.Appointments,
                 Schedules = dto.Schedules.Select(s => new ScheduleSimpleDTO
                 {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -16,6 +17,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("TotalUsers")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetTotalUsers()
         {
 
@@ -26,6 +28,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("TotalExams")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetTotalExams()
         {
             int total = await _context.Examinations.CountAsync();
@@ -33,6 +36,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("TotalMedicalRecords")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetTotalMedicalRecords()
         {
             int total = await _context.MedicalRecords.CountAsync();
@@ -40,6 +44,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("TotalARVProtocols")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetTotalARVProtocols()
         {
             int total = await _context.ARVProtocols.CountAsync();
@@ -47,6 +52,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("PatientsByGender")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetPatientsByGender()
         {
             var grouped = await _context.Users
@@ -58,6 +64,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("ARVProtocolStats")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetARVProtocolStats()
         {
             var stats = await _context.CustomizedARVProtocols
@@ -70,6 +77,7 @@ namespace HIV.Controllers
 
 
         [HttpGet("NewUsersPerMonth")]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetNewUsersPerMonth()
         {
             var raw = await _context.Users

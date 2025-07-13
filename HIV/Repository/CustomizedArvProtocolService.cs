@@ -40,7 +40,7 @@ namespace HIV.Repository
                 FullName = cp.Patient?.FullName ?? "Unknown",
                 Phone = cp.Patient?.Phone ?? "Unknown",
                 LatestExamination = cp.Patient?.ExaminationsAsPatient?
-                    .Where(e => e.Status == "ACTIVE")
+                    .Where(e => e.Status == "ACTIVE" && e.ExamDate <= DateOnly.FromDateTime(DateTime.Now))
                     .OrderByDescending(e => e.ExamDate)
                     .Select(e => new LatestExaminationDto
                     {
