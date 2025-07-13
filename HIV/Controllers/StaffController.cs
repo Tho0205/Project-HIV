@@ -26,7 +26,7 @@ namespace HIV.Controllers
         {
             var query = _context.Accounts
                 .Include(a => a.User)
-                .Where(a => a.User.Role == "Patient" && (a.User.Status == "ACTIVE" || a.User.Status == "INACTIVE"))
+                .Where(a => a.User.Role == "Patient")
                 .AsQueryable();
 
             // sort full_name or created_at

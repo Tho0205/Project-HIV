@@ -1,5 +1,6 @@
 ﻿using HIV.DTOs;
 using HIV.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,7 @@ namespace HIV.Controllers
         /// Get all patients with exam count
         /// </summary>
         [HttpGet("patients")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<ActionResult<BaseResponseDTO<List<PatientListDTO>>>> GetPatients(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 50)
@@ -44,6 +46,7 @@ namespace HIV.Controllers
         /// Get patient examinations
         /// </summary>
         [HttpGet("patient/{patientId}/examinations")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<ActionResult<BaseResponseDTO<List<ExaminationDTO>>>> GetPatientExaminations(int patientId)
         {
             try
@@ -62,6 +65,7 @@ namespace HIV.Controllers
         /// Create or Update examination
         /// </summary>
         [HttpPost("save")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<ActionResult<BaseResponseDTO<ExaminationDTO>>> SaveExamination(
             [FromBody] ExaminationFormDTO dto)
         {
@@ -90,6 +94,7 @@ namespace HIV.Controllers
         /// Delete examination (soft delete)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<ActionResult<BaseResponseDTO<bool>>> DeleteExamination(int id)
         {
             try
@@ -111,6 +116,7 @@ namespace HIV.Controllers
         /// Get doctors for dropdown
         /// </summary>
         [HttpGet("doctors")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<ActionResult<BaseResponseDTO<List<object>>>> GetDoctors()
         {
             try
