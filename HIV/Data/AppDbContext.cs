@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<CustomizedArvProtocol> CustomizedARVProtocols { get; set; }
     public DbSet<CustomizedArvProtocolDetail> CustomizedARVProtocolDetails { get; set; }
     public DbSet<MedicalRecord> MedicalRecords { get; set; }
+    public DbSet<Notification> Notification { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -42,6 +43,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CustomizedArvProtocol>().ToTable("CustomizedARV_Protocol");
         modelBuilder.Entity<CustomizedArvProtocolDetail>().ToTable("CustomizedARV_Protocol_Detail");
         modelBuilder.Entity<MedicalRecord>().ToTable("MedicalRecord");
+
 
         // Account - User (1:1)
         modelBuilder.Entity<User>()

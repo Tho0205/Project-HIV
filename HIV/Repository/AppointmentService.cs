@@ -11,9 +11,12 @@ namespace HIV.Repository
     public class AppointmentService : IAppointmentService
     {
         private readonly AppDbContext _context;
-        public AppointmentService(AppDbContext context)
+        private readonly INotificationService _notificationService;
+
+        public AppointmentService(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<List<UserTableDTO>> GetAllListDoctor()
@@ -237,6 +240,8 @@ namespace HIV.Repository
                 }
 
                 await _context.SaveChangesAsync();
+
+                await _notificationService.CreateAppointmentReminders(appoint.AppointmentId);
                 return dto;
             }
             catch (DbUpdateException ex)
@@ -407,7 +412,20 @@ namespace HIV.Repository
                 Status = "CONFIRMED",
                 Note = note
             };
-            return await UpdateAppointmentStatus(dto);
+
+            var result = await UpdateAppointmentStatus(dto);
+
+            if (result)
+            {
+                var appointment = await _context.Appointments.FindAsync(appointmentId);
+                if (appointment?.PatientId != null)
+                {
+                    // Tạo thông báo nhắc uống thuốc
+                    await _notificationService.CreateMedicationReminders(appointment.PatientId);
+                }
+            }
+
+            return result;
         }
 
         public async Task<bool> CompleteAppointment(int appointmentId, string? note = null)

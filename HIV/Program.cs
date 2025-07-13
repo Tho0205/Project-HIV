@@ -170,6 +170,7 @@ namespace HIV
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IJwtService, JWTService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             builder.Services.AddCors(options =>
             {

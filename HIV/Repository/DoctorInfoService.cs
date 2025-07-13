@@ -16,6 +16,9 @@ namespace HIV.Repository
 
         public async Task<IEnumerable<DoctorInfoDto>> GetAllAsync()
         {
+            // First, sync any new doctor users
+            await SyncDoctorUsersAsync();
+
             return await _context.DoctorInfos
                 .Include(d => d.Doctor)
                 .Select(d => new DoctorInfoDto
@@ -51,46 +54,29 @@ namespace HIV.Repository
             };
         }
 
-        public async Task<DoctorInfoDto> CreateAsync(CreateDoctorInfoDto dto)
-        {
-            var entity = new DoctorInfo
-            {
-                DoctorId = dto.DoctorId,
-                Degree = dto.Degree,
-                Specialization = dto.Specialization,
-                ExperienceYears = dto.ExperienceYears,
-                DoctorAvatar = dto.DoctorAvatar,
-                Status = "ACTIVE"
-            };
-
-            _context.DoctorInfos.Add(entity);
-            await _context.SaveChangesAsync();
-
-            return new DoctorInfoDto
-            {
-                DoctorId = entity.DoctorId,
-                Degree = entity.Degree,
-                Specialization = entity.Specialization,
-                ExperienceYears = entity.ExperienceYears,
-                DoctorAvatar = entity.DoctorAvatar,
-                Status = entity.Status,
-                DoctorName = null // Optional: you can query user table here if needed
-            };
-        }
-
         public async Task<bool> UpdateAsync(int doctorId, UpdateDoctorInfoDto dto)
         {
-            var entity = await _context.DoctorInfos.FindAsync(doctorId);
-            if (entity == null) return false;
+            try
+            {
+                var entity = await _context.DoctorInfos.FindAsync(doctorId);
+                if (entity == null) return false;
 
-            entity.Degree = dto.Degree;
-            entity.Specialization = dto.Specialization;
-            entity.ExperienceYears = dto.ExperienceYears;
-            entity.DoctorAvatar = dto.DoctorAvatar;
-            entity.Status = dto.Status;
+                // Update fields
+                entity.Degree = dto.Degree ?? entity.Degree;
+                entity.Specialization = dto.Specialization ?? entity.Specialization;
+                entity.ExperienceYears = dto.ExperienceYears ?? entity.ExperienceYears;
+                entity.DoctorAvatar = dto.DoctorAvatar ?? entity.DoctorAvatar;
+                entity.Status = dto.Status ?? entity.Status;
 
-            await _context.SaveChangesAsync();
-            return true;
+                _context.DoctorInfos.Update(entity);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error if needed
+                throw new Exception($"Error updating doctor info: {ex.Message}");
+            }
         }
 
         public async Task<bool> DeleteAsync(int doctorId)
@@ -101,6 +87,43 @@ namespace HIV.Repository
             entity.Status = "DELETED";
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // Auto-sync method to add users with Doctor role to DoctorInfo table
+        public async Task<int> SyncDoctorUsersAsync()
+        {
+            try
+            {
+                // Find all users with Doctor role who don't have DoctorInfo yet
+                var doctorUsersWithoutInfo = await _context.Users
+                    .Where(u => u.Role == "Doctor" && u.Status == "ACTIVE")
+                    .Where(u => !_context.DoctorInfos.Any(di => di.DoctorId == u.UserId))
+                    .ToListAsync();
+
+                if (!doctorUsersWithoutInfo.Any())
+                    return 0;
+
+                // Create DoctorInfo entries for these users
+                var newDoctorInfos = doctorUsersWithoutInfo.Select(user => new DoctorInfo
+                {
+                    DoctorId = user.UserId,
+                    Degree = null, // Will be updated later by staff
+                    Specialization = null, // Will be updated later by staff
+                    ExperienceYears = null, // Will be updated later by staff
+                    DoctorAvatar = user.UserAvatar ?? "/images/default-doctor.png", // Use user avatar or default
+                    Status = "ACTIVE"
+                }).ToList();
+
+                _context.DoctorInfos.AddRange(newDoctorInfos);
+                await _context.SaveChangesAsync();
+
+                return newDoctorInfos.Count;
+            }
+            catch (Exception ex)
+            {
+                // Log error if needed
+                throw new Exception($"Error syncing doctor users: {ex.Message}");
+            }
         }
     }
 }
