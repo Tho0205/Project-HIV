@@ -39,16 +39,16 @@ namespace WebAPITest.Controllers
             return User.FindFirst(ClaimTypes.Role)?.Value ?? "";
         }
 
-         //GET: api/Account
-        [HttpGet]
-        [Authorize(Roles = "Admin")]
+        //GET: api/Account
+       [HttpGet]
+       [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<Account>>> GetAccounts()
         {
             return await _context.Accounts.ToListAsync();
         }
 
-        // POST: api/Account/login
-        [HttpPost("login")]
+        //POST: api/Account/login
+       [HttpPost("login")]
         public async Task<ActionResult<object>> Login([FromBody] DTOLogin login)
         {
             var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == login.identifier.Trim() || a.Username == login.identifier.Trim());
