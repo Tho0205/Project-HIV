@@ -61,7 +61,7 @@ namespace HIV.Repository
 
             try
             {
-                // 1. ✅ Examination - GIỮ NGUYÊN
+        
                 Console.WriteLine($"🏥 Creating Examination...");
                 try
                 {
@@ -93,18 +93,17 @@ namespace HIV.Repository
                     Console.WriteLine($"❌ Examination failed: {ex.Message}");
                 }
 
-                // 2. 🔍 DEBUG CustomizedArvProtocol chi tiết
+     
                 Console.WriteLine($"💊 DEBUG: Starting CustomizedArvProtocol creation...");
 
                 try
                 {
-                    // Kiểm tra số lượng records trước khi insert
+             
                     var countBefore = await _context.Database
                         .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
                         .FirstOrDefaultAsync();
                     Console.WriteLine($"📊 Records before insert: {countBefore}");
 
-                    // Kiểm tra giá trị sẽ insert
                     Console.WriteLine($"📝 Values to insert:");
                     Console.WriteLine($"   DoctorId: {appointment.DoctorId}");
                     Console.WriteLine($"   PatientId: {appointment.PatientId}");
@@ -113,7 +112,7 @@ namespace HIV.Repository
                     Console.WriteLine($"   Description: Auto-generated from appointment booking");
                     Console.WriteLine($"   Status: ACTIVE");
 
-                    // Thực hiện insert với logging chi tiết
+                   
                     Console.WriteLine($"🚀 Executing INSERT statement...");
                     var protocolSql = @"
                 INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, BaseProtocolId, Name, Description, Status)
@@ -149,10 +148,10 @@ namespace HIV.Repository
                     {
                         Console.WriteLine($"⚠️ WARNING: No new records detected despite rowsAffected = {rowsAffected}");
 
-                        // Kiểm tra xem có constraint nào block không
+          
                         Console.WriteLine($"🔍 Checking for potential constraints...");
 
-                        // Kiểm tra foreign key constraints
+         
                         var doctorExists = await _context.Users.AnyAsync(u => u.UserId == appointment.DoctorId);
                         var patientExists = await _context.Users.AnyAsync(u => u.UserId == appointment.PatientId);
 
@@ -171,7 +170,7 @@ namespace HIV.Repository
                     Console.WriteLine($"🔍 Inner exception: {ex.InnerException?.Message}");
                     Console.WriteLine($"🔍 Stack trace: {ex.StackTrace}");
 
-                    // Thử với insert đơn giản nhất có thể
+        
                     try
                     {
                         Console.WriteLine($"🔄 Trying minimal insert...");
@@ -227,7 +226,7 @@ namespace HIV.Repository
                     DoctorId = dto.doctorId,
                     Note = dto.Note,
                     IsAnonymous = (bool)dto.IsAnonymous,
-                    Status = "SCHEDULED", // Changed from COMPLETED to CONFIRMED as default
+                    Status = "SCHEDULED",
                     CreatedAt = DateTime.Now,
                     AppointmentDate = dto.AppointmentDate
                 };
@@ -365,8 +364,6 @@ namespace HIV.Repository
             return patients;
         }
 
-        // NEW METHODS FOR STATUS MANAGEMENT
-
         public async Task<bool> UpdateAppointmentStatus(UpdateAppointmentStatusDTO dto)
         {
             try
@@ -376,15 +373,8 @@ namespace HIV.Repository
                 {
                     throw new ArgumentException("Appointment không tồn tại");
                 }
-
-                // Validate status transition
-                //if (!IsValidStatusTransition(appointment.Status, dto.Status))
-                //{
-                //    throw new ArgumentException($"Không thể chuyển từ {appointment.Status} sang {dto.Status}");
-                //}
-
                 appointment.Status = dto.Status;
-                if(appointment.Status == "CONFIRMED")
+                if(appointment.Status == "CONFIRMED" && appointment.IsAnonymous == false)
                 {
                     await CreateRelatedRecordsAsync(appointment.AppointmentId);
 
@@ -465,21 +455,5 @@ namespace HIV.Repository
 
             return appointment;
         }
-
-        // Helper method to validate status transitions
-        //private bool IsValidStatusTransition(string currentStatus, string newStatus)
-        //{
-        //    // Define valid transitions
-        //    var validTransitions = new Dictionary<string, List<string>>
-        //    {
-        //        ["CONFIRMED"] = new List<string> { "COMPLETED", "CANCELLED" },
-        //        ["COMPLETED"] = new List<string>(), // Cannot change from COMPLETED
-        //        ["CANCELLED"] = new List<string>()  // Cannot change from CANCELLED
-        //    };
-
-        //    return validTransitions.ContainsKey(currentStatus) &&
-        //           validTransitions[currentStatus].Contains(newStatus);
-        //}
-
     }
 }
