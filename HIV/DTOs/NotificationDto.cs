@@ -7,8 +7,8 @@
         public string Message { get; set; }
         public DateTime ScheduledTime { get; set; }
         public bool IsRead { get; set; }
-        public string TimeAgo { get; set; } // "10 phút trước", "1 giờ trước", etc.
-        public int? RelatedId { get; set; } // ID liên quan (appointment, protocol, etc.)
+        public string TimeAgo { get; set; } 
+        public int? RelatedId { get; set; } 
     }
 
     public class CreateNotificationDto
