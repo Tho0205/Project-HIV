@@ -376,6 +376,11 @@ namespace HIV.Repository
                 appointment.Status = dto.Status;
                 if(appointment.Status == "CONFIRMED" && appointment.IsAnonymous == false)
                 {
+                    if(appointment.PatientId != null)
+                    {
+                       
+                        await _notificationService.CreateMedicationReminders(appointment.PatientId);
+                    }
                     await CreateRelatedRecordsAsync(appointment.AppointmentId);
 
                 }
@@ -405,15 +410,15 @@ namespace HIV.Repository
 
             var result = await UpdateAppointmentStatus(dto);
 
-            if (result)
-            {
-                var appointment = await _context.Appointments.FindAsync(appointmentId);
-                if (appointment?.PatientId != null)
-                {
-                    // Tạo thông báo nhắc uống thuốc
-                    await _notificationService.CreateMedicationReminders(appointment.PatientId);
-                }
-            }
+            //if (result)
+            //{
+            //    var appointment = await _context.Appointments.FindAsync(appointmentId);
+            //    if (appointment?.PatientId != null)
+            //    {
+            //        // Tạo thông báo nhắc uống thuốc
+            //        await _notificationService.CreateMedicationReminders(appointment.PatientId);
+            //    }
+            //}
 
             return result;
         }
