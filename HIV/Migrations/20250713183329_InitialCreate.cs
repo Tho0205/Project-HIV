@@ -381,7 +381,7 @@ namespace HIV.Migrations
                 {
                     AppointmentId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PatientId = table.Column<int>(type: "int", nullable: true),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
                     ScheduleId = table.Column<int>(type: "int", nullable: false),
                     DoctorId = table.Column<int>(type: "int", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -412,6 +412,48 @@ namespace HIV.Migrations
                         principalTable: "User",
                         principalColumn: "UserId",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    NotificationId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: true),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AppointmentId = table.Column<int>(type: "int", nullable: true),
+                    ProtocolId = table.Column<int>(type: "int", nullable: true),
+                    ExaminationId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.NotificationId);
+                    table.ForeignKey(
+                        name: "FK_Notification_Appointment_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointment",
+                        principalColumn: "AppointmentId");
+                    table.ForeignKey(
+                        name: "FK_Notification_CustomizedARV_Protocol_ProtocolId",
+                        column: x => x.ProtocolId,
+                        principalTable: "CustomizedARV_Protocol",
+                        principalColumn: "CustomProtocolId");
+                    table.ForeignKey(
+                        name: "FK_Notification_Examination_ExaminationId",
+                        column: x => x.ExaminationId,
+                        principalTable: "Examination",
+                        principalColumn: "ExamId");
+                    table.ForeignKey(
+                        name: "FK_Notification_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "UserId");
                 });
 
             migrationBuilder.CreateIndex(
@@ -516,6 +558,26 @@ namespace HIV.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_AppointmentId",
+                table: "Notification",
+                column: "AppointmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_ExaminationId",
+                table: "Notification",
+                column: "ExaminationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_ProtocolId",
+                table: "Notification",
+                column: "ProtocolId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId",
+                table: "Notification",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Schedule_DoctorId",
                 table: "Schedule",
                 column: "DoctorId");
@@ -530,9 +592,6 @@ namespace HIV.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Appointment");
-
             migrationBuilder.DropTable(
                 name: "ARV_Protocol_Detail");
 
@@ -552,7 +611,7 @@ namespace HIV.Migrations
                 name: "MedicalRecord");
 
             migrationBuilder.DropTable(
-                name: "Schedule");
+                name: "Notification");
 
             migrationBuilder.DropTable(
                 name: "Blog");
@@ -561,10 +620,16 @@ namespace HIV.Migrations
                 name: "ARV");
 
             migrationBuilder.DropTable(
+                name: "Appointment");
+
+            migrationBuilder.DropTable(
                 name: "CustomizedARV_Protocol");
 
             migrationBuilder.DropTable(
                 name: "Examination");
+
+            migrationBuilder.DropTable(
+                name: "Schedule");
 
             migrationBuilder.DropTable(
                 name: "ARV_Protocol");
