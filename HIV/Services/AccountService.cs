@@ -96,7 +96,7 @@ namespace HIV.Services
                 }
             }
 
-            // tạo ra token từ những thôn tin trên
+            // tạo ra token từ những thông tin trên
             var token = _jwtService.GenerateToken(
                 user.FullName ?? email,
                 user.Role ?? "Patient",
