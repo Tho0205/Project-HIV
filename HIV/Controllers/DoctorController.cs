@@ -21,48 +21,6 @@ namespace HIV.Controllers
             _logger = logger;
         }
 
-        ///// <summary>
-        ///// Lấy danh sách bệnh nhân được phân công cho doctor
-        ///// </summary>
-        //[HttpGet("Patients")]
-        //[Authorize(Roles = "Doctor,Patient")]
-        //[ProducesResponseType(typeof(DoctorPatientsResponseDto), 200)]
-        //[ProducesResponseType(400)]
-        //[ProducesResponseType(500)]
-        //public async Task<ActionResult<DoctorPatientsResponseDto>> GetDoctorPatients(
-        //    [FromQuery] int doctorId,
-        //    [FromQuery] string sortBy = "full_name",
-        //    [FromQuery] string order = "asc",
-        //    [FromQuery] int page = 1,
-        //    [FromQuery] int pageSize = 8)
-        //{
-        //    try
-        //    {
-        //        if (doctorId <= 0)
-        //        {
-        //            return BadRequest(new { message = "DoctorId không hợp lệ" });
-        //        }
-
-        //        if (page < 1) page = 1;
-        //        if (pageSize < 1 || pageSize > 100) pageSize = 8;
-
-        //        var result = await _doctorPatientService.GetDoctorPatientsAsync(
-        //            doctorId, sortBy, order, page, pageSize);
-
-        //        return Ok(result);
-        //    }
-        //    catch (ApplicationException ex)
-        //    {
-        //        _logger.LogError(ex, "Application error getting doctor patients");
-        //        return StatusCode(500, new { message = ex.Message });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Unexpected error getting doctor patients");
-        //        return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
-        //    }
-        //}
-
         /// <summary>
         /// Lấy toàn bộ danh sách bệnh nhân trong hệ thống
         /// </summary>
@@ -109,7 +67,7 @@ namespace HIV.Controllers
             [FromQuery] string sortBy = "full_name",
             [FromQuery] string order = "asc",
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 8)
         {
             try
             {
@@ -119,7 +77,7 @@ namespace HIV.Controllers
                 }
 
                 if (page < 1) page = 1;
-                if (pageSize < 1 || pageSize > 100) pageSize = 10;
+                if (pageSize < 1 || pageSize > 100) pageSize = 8;
 
                 var result = await _doctorPatientService.GetDoctorPatientsAsync(
                     doctorId, scheduleDate, hasScheduleOnly, sortBy, order, page, pageSize);
@@ -134,7 +92,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting doctor patients");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-6" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
             }
         }
 
@@ -167,7 +125,7 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting patient stats");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-5" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
             }
         }
 
@@ -178,18 +136,27 @@ namespace HIV.Controllers
         [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(PatientHistoryDto), 200)]
         [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<PatientHistoryDto>> GetPatientHistory(int patientId)
+        public async Task<ActionResult<PatientHistoryDto>> GetPatientHistory(
+            int patientId,
+            [FromQuery] int doctorId)
         {
             try
             {
-                if (patientId <= 0)
+                if (patientId <= 0 || doctorId <= 0)
                 {
-                    return BadRequest(new { message = "PatientId không hợp lệ" });
+                    return BadRequest(new { message = "PatientId và DoctorId không hợp lệ" });
                 }
 
-                // Gọi service không có doctorId
-                var history = await _doctorPatientService.GetPatientHistoryAsync(patientId);
+                // Kiểm tra quyền truy cập
+                var hasAccess = await _doctorPatientService.CanDoctorAccessPatientAsync(doctorId, patientId);
+                if (!hasAccess)
+                {
+                    return StatusCode(403, new { message = "Bạn không có quyền truy cập thông tin bệnh nhân này" });
+                }
+
+                var history = await _doctorPatientService.GetPatientHistoryAsync(patientId, doctorId);
                 return Ok(history);
             }
             catch (ApplicationException ex)
@@ -200,7 +167,34 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error getting patient history");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-4" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
+            }
+        }
+
+        /// <summary>
+        /// Lấy lịch sử khám bệnh của bệnh nhân (chế độ xem only)
+        /// </summary>
+        [HttpGet("PatientHistoryViewOnly/{patientId}")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(PatientHistoryDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<ActionResult<PatientHistoryDto>> GetPatientHistoryViewOnly(int patientId)
+        {
+            try
+            {
+                if (patientId <= 0)
+                {
+                    return BadRequest(new { message = "PatientId không hợp lệ" });
+                }
+
+                var history = await _doctorPatientService.GetPatientHistoryViewOnlyAsync(patientId);
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting patient history view only");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
             }
         }
 
@@ -237,63 +231,8 @@ namespace HIV.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting patient detail");
-                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn-3" });
+                return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
             }
         }
-
-        ///// <summary>
-        ///// Lấy danh sách bệnh nhân chưa có bác sĩ
-        ///// </summary>
-        //[HttpGet("AvailablePatients")]
-        //[Authorize(Roles = "Doctor")]
-        //[ProducesResponseType(typeof(List<DoctorPatientListDto>), 200)]
-        //[ProducesResponseType(500)]
-        //public async Task<ActionResult<List<DoctorPatientListDto>>> GetAvailablePatients()
-        //{
-        //    try
-        //    {
-        //        var patients = await _doctorPatientService.GetAvailablePatientsAsync();
-        //        return Ok(patients);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error getting available patients");
-        //        return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Thêm bệnh nhân vào danh sách quản lý của bác sĩ
-        ///// </summary>
-        //[HttpPost("AssignPatient")]
-        //[Authorize(Roles = "Doctor")]
-        //[ProducesResponseType(204)]
-        //[ProducesResponseType(400)]
-        //[ProducesResponseType(500)]
-        //public async Task<ActionResult> AssignPatientToDoctor(
-        //    [FromBody] AssignPatientDto dto)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid)
-        //        {
-        //            return BadRequest(new { message = "Dữ liệu không hợp lệ" });
-        //        }
-
-        //        var result = await _doctorPatientService.AssignPatientToDoctorAsync(dto.DoctorId, dto.PatientId);
-
-        //        if (!result)
-        //        {
-        //            return BadRequest(new { message = "Không thể thêm bệnh nhân" });
-        //        }
-
-        //        return NoContent();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error assigning patient to doctor");
-        //        return StatusCode(500, new { message = "Đã xảy ra lỗi không mong muốn" });
-        //    }
-        //}
     }
 }
