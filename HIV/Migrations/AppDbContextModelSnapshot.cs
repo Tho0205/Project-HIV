@@ -467,6 +467,60 @@ namespace HIV.Migrations
                     b.ToTable("MedicalRecord", (string)null);
                 });
 
+            modelBuilder.Entity("HIV.Models.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<int?>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ExaminationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ProtocolId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("ExaminationId");
+
+                    b.HasIndex("ProtocolId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notification");
+                });
+
             modelBuilder.Entity("HIV.Models.Schedule", b =>
                 {
                     b.Property<int>("ScheduleId")
@@ -729,6 +783,33 @@ namespace HIV.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("HIV.Models.Notification", b =>
+                {
+                    b.HasOne("HIV.Models.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId");
+
+                    b.HasOne("HIV.Models.Examination", "Examination")
+                        .WithMany()
+                        .HasForeignKey("ExaminationId");
+
+                    b.HasOne("HIV.Models.CustomizedArvProtocol", "Protocol")
+                        .WithMany()
+                        .HasForeignKey("ProtocolId");
+
+                    b.HasOne("HIV.Models.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Examination");
+
+                    b.Navigation("Protocol");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HIV.Models.Schedule", b =>
                 {
                     b.HasOne("HIV.Models.User", "Doctor")
@@ -820,6 +901,8 @@ namespace HIV.Migrations
                     b.Navigation("MedicalRecordsAsDoctor");
 
                     b.Navigation("MedicalRecordsAsPatient");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("Schedules");
                 });

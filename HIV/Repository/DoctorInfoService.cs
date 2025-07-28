@@ -96,7 +96,8 @@ namespace HIV.Repository
             {
                 // Find all users with Doctor role who don't have DoctorInfo yet
                 var doctorUsersWithoutInfo = await _context.Users
-                    .Where(u => u.Role == "Doctor" && u.Status == "ACTIVE")
+                    .Where(u => u.Role != null && u.Role.ToLower().Contains("doctor"))
+                    .Where(u => u.Status == "ACTIVE")
                     .Where(u => !_context.DoctorInfos.Any(di => di.DoctorId == u.UserId))
                     .ToListAsync();
 

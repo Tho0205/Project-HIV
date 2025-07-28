@@ -15,10 +15,12 @@ namespace HIV.Controllers
     {
         //private readonly ICommonOperation<Appointment> _repository;
         private readonly IAppointmentService _appService;
-        public AppointmentController(IAppointmentService appointmentService)
+        private readonly IDoctorMangamentPatient _doctorPatientService; // Thêm dòng này
+        public AppointmentController(IAppointmentService appointmentService, IDoctorMangamentPatient doctorPatientService)
         {
             //_repository = repository;
             _appService = appointmentService;
+            _doctorPatientService = doctorPatientService; // Thêm dòng này
         }
         //[HttpPost]
         //public async Task<IActionResult> CreateAppointment([FromBody] AppointmentDTO data, int doctor_id)
@@ -61,6 +63,9 @@ namespace HIV.Controllers
         [Route("create")]
         public  async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDTO dto)
         {
+            // Gọi auto transfer TRƯỚC khi tạo appointment
+            await _doctorPatientService.AutoTransferPatientOnNewAppointment(dto.PatientId, dto.doctorId);
+            //
             await _appService.CreateAppointment(dto);
             return Ok("create success");
         }

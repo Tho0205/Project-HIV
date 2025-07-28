@@ -200,7 +200,6 @@ namespace HIV.Repository
             // Tạo thông báo nhắc lịch hẹn
             var reminderTimes = new[]
             {
-                appointment.AppointmentDate.AddHours(-24), // 1 ngày trước
                 appointment.AppointmentDate.AddHours(-2)   // 2 giờ trước
             };
 

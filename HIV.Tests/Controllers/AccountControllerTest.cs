@@ -25,6 +25,46 @@ namespace HIV.Tests.Controllers
             //_controller = new AccountController(_context);
         }
 
+
+        [Theory]
+        [InlineData("user", "123","Login Successfully")]
+        public async Task Login_Correct1(string usernamne,string password,string result2)
+        {
+            var account = new Account
+            {
+                AccountId = 1,
+                Username = "user",
+                Email = "user@test.com",
+                PasswordHash = "123"
+            };
+            var user = new User
+            {
+                AccountId = 1,
+                FullName = "User",
+                Role = "Patient",
+                UserId = 1,
+                UserAvatar = "avt.png"
+            };
+
+            await _context.Accounts.AddAsync(account);
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            var dtoCorrect = new DTOLogin
+            {
+                identifier = usernamne,
+                password_hash = password
+            };
+            var dtoWrong = new DTOLogin
+            {
+                identifier = usernamne,
+                password_hash = "wrongpass"
+            };
+
+            Assert.Equal(result2,"Login Successfully");
+       
+        }
+
         [Fact]
         public async Task Login_Correct()
         {

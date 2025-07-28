@@ -239,8 +239,6 @@ namespace HIV.Repository
                 }
 
                 await _context.SaveChangesAsync();
-
-                await _notificationService.CreateAppointmentReminders(appoint.AppointmentId);
                 return dto;
             }
             catch (DbUpdateException ex)
@@ -381,6 +379,7 @@ namespace HIV.Repository
                        
                         await _notificationService.CreateMedicationReminders(appointment.PatientId);
                     }
+                    await _notificationService.CreateAppointmentReminders(appointment.AppointmentId);
                     await CreateRelatedRecordsAsync(appointment.AppointmentId);
 
                 }
