@@ -256,7 +256,7 @@ namespace HIV
                 {
                     var token = await accountService.LoginWithGoogleAsync(result.Principal);
 
-                    // Set the token in a secure cookie
+                    // thêm token vào cookie
                     var cookieOptions = new CookieOptions
                     {
                         HttpOnly = true,
@@ -279,7 +279,7 @@ namespace HIV
             app.MapPost("/api/account/logout", async (HttpContext context) =>
             {
                 await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // logout Google/Cookie
-                context.Response.Cookies.Delete("AuthToken"); // optional: xóa JWT nếu lưu bằng cookie
+                context.Response.Cookies.Delete("AuthToken"); // xóa JWT nếu lưu bằng cookie
                 return Results.Ok(new { message = "Logged out successfully" });
             });
 
