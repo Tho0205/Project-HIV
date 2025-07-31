@@ -334,13 +334,16 @@ namespace HIV.Repository
                     throw new ArgumentException("Appointment không tồn tại");
                 }
                 appointment.Status = dto.Status;
-                if(appointment.Status == "CONFIRMED" && appointment.IsAnonymous == false)
+                if (appointment.Status == "CONFIRMED")
                 {
-                    if(appointment.PatientId != null)
+                    if (appointment.PatientId != null)
                     {
-                       
+
                         await _notificationService.CreateMedicationReminders(appointment.PatientId);
                     }
+                }
+                if(appointment.Status == "CHECKED_IN" && appointment.IsAnonymous == false)
+                {
                     await _notificationService.CreateAppointmentReminders(appointment.AppointmentId);
                     await CreateRelatedRecordsAsync(appointment.AppointmentId);
 
