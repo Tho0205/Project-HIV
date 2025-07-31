@@ -54,6 +54,7 @@ namespace HIV.Repository
                 .Select(e => new ExaminationDTO
                 {
                     ExamId = e.ExamId,
+                    AppointmentId = e.AppointmentId,
                     DoctorName = e.Doctor.FullName ?? "N/A",
                     ExamDate = e.ExamDate ?? DateOnly.MinValue,
                     Result = e.Result ?? "",
@@ -68,7 +69,6 @@ namespace HIV.Repository
         public async Task<ExaminationDTO> SaveExaminationAsync(ExaminationFormDTO dto)
         {
             Examination examination;
-
             if (dto.ExamId.HasValue)
             {
                 // Update existing
@@ -78,11 +78,11 @@ namespace HIV.Repository
 
                 // Only update allowed fields
                 examination.DoctorId = dto.DoctorId;
+                examination.AppointmentId = dto.AppointmentId;  // ✅ Đã có
                 examination.ExamDate = dto.ExamDate;
                 examination.Result = dto.Result;
                 examination.Cd4Count = dto.Cd4Count;
                 examination.HivLoad = dto.HivLoad;
-                // Update timestamp if you have UpdatedAt field
             }
             else
             {
@@ -91,6 +91,7 @@ namespace HIV.Repository
                 {
                     PatientId = dto.PatientId,
                     DoctorId = dto.DoctorId,
+                    AppointmentId = dto.AppointmentId,  // ✅ THÊM DÒNG NÀY
                     ExamDate = dto.ExamDate,
                     Result = dto.Result,
                     Cd4Count = dto.Cd4Count,
@@ -110,6 +111,7 @@ namespace HIV.Repository
                 .Select(e => new ExaminationDTO
                 {
                     ExamId = e.ExamId,
+                    AppointmentId = e.AppointmentId,  // ✅ THÊM DÒNG NÀY (nếu DTO có field này)
                     DoctorName = e.Doctor.FullName ?? "N/A",
                     ExamDate = e.ExamDate ?? DateOnly.MinValue,
                     Result = e.Result ?? "",

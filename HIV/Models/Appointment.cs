@@ -21,4 +21,7 @@ public partial class Appointment
     public User Doctor { get; set; }
     public Schedule Schedule { get; set; }
 
+    public ICollection<Examination> Examinations { get; set; }
+    public ICollection<CustomizedArvProtocol> CustomizedProtocols { get; set; }
+
 }

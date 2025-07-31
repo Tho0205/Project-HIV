@@ -15,6 +15,8 @@ namespace HIV.DTOs
         [Required(ErrorMessage = "Vui lòng chọn bác sĩ")]
         public int DoctorId { get; set; }
 
+        public int? AppointmentId { get; set; }
+
         [Required(ErrorMessage = "Vui lòng chọn ngày xét nghiệm")]
         public DateOnly ExamDate { get; set; }
 
@@ -52,6 +54,8 @@ namespace HIV.DTOs
     {
         public int ExamId { get; set; }
         public string DoctorName { get; set; } = "";
+        public int? AppointmentId { get; set; }
+
         public DateOnly ExamDate { get; set; }
         public string Result { get; set; } = "";
         public int? Cd4Count { get; set; }

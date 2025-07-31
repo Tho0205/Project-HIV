@@ -38,6 +38,7 @@
     {
         public int CustomProtocolId { get; set; }
         public int? BaseProtocolId { get; set; }
+        public int? AppointmentId { get; set; }
         public string? BaseProtocolName { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
@@ -49,6 +50,7 @@
     {
         public int? BaseProtocolId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public int? AppointmentId { get; set; }
         public string? Description { get; set; }
         public List<CustomProtocolDetailDto> Details { get; set; } = new();
     }
@@ -57,5 +59,7 @@
     {
         public int ProtocolId { get; set; }
         public bool IsCustom { get; set; }
+
+        public int? AppointmentId { get; set; }
     }
 }

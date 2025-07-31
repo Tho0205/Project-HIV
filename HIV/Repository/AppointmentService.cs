@@ -61,144 +61,106 @@ namespace HIV.Repository
 
             try
             {
-        
+                // Creating Examination (đã OK)
                 Console.WriteLine($"🏥 Creating Examination...");
-                try
+                var examination = new Examination
                 {
-                    string examStatus = "ACTIVE";
-                    var existingExam = await _context.Examinations.FirstOrDefaultAsync();
-                    if (existingExam != null && !string.IsNullOrEmpty(existingExam.Status))
-                    {
-                        examStatus = existingExam.Status;
-                    }
+                    PatientId = appointment.PatientId,
+                    DoctorId = appointment.DoctorId,
+                    AppointmentId = appointmentId,  // ✅ Đã có
+                    ExamDate = DateOnly.FromDateTime(appointment.AppointmentDate),
+                    Result = "Scheduled for examination",
+                    Cd4Count = null,
+                    HivLoad = null,
+                    Status = "ACTIVE",
+                    CreatedAt = DateTime.Now
+                };
 
-                    var examination = new Examination
-                    {
-                        PatientId = appointment.PatientId,
-                        DoctorId = appointment.DoctorId,
-                        ExamDate = DateOnly.FromDateTime(appointment.AppointmentDate),
-                        Result = "Scheduled for examination",
-                        Cd4Count = null,
-                        HivLoad = null,
-                        Status = examStatus,
-                        CreatedAt = DateTime.Now
-                    };
+                _context.Examinations.Add(examination);
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Examination created successfully");
 
-                    _context.Examinations.Add(examination);
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"✅ Examination created successfully");
-                }
-                catch (Exception ex)
+                // ✅ SỬA PHẦN TạO CustomizedArvProtocol - THÊM AppointmentId
+                Console.WriteLine($"💊 Creating CustomizedArvProtocol...");
+
+                var countBefore = await _context.Database
+                    .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"📊 Records before insert: {countBefore}");
+
+                Console.WriteLine($"📝 Values to insert:");
+                Console.WriteLine($"   DoctorId: {appointment.DoctorId}");
+                Console.WriteLine($"   PatientId: {appointment.PatientId}");
+                Console.WriteLine($"   AppointmentId: {appointmentId}");  // ✅ THÊM LOG
+                Console.WriteLine($"   BaseProtocolId: NULL");
+                Console.WriteLine($"   Name: Protocol for Appointment #{appointmentId}");
+                Console.WriteLine($"   Description: Auto-generated from appointment booking");
+                Console.WriteLine($"   Status: ACTIVE");
+
+                // ✅ SỬA SQL - THÊM AppointmentId VÀO
+                var protocolSql = @"
+            INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, AppointmentId, BaseProtocolId, Name, Description, Status)
+            VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6})";
+
+                var rowsAffected = await _context.Database.ExecuteSqlRawAsync(protocolSql,
+                    appointment.DoctorId,
+                    appointment.PatientId,
+                    appointmentId,              // ✅ THÊM PARAMETER NÀY
+                    DBNull.Value,               // BaseProtocolId
+                    $"Protocol for Appointment #{appointmentId}",
+                    "Auto-generated from appointment booking",
+                    "ACTIVE");
+
+                Console.WriteLine($"📊 SQL ExecuteSqlRawAsync returned: {rowsAffected} rows affected");
+
+                var countAfter = await _context.Database
+                    .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"📊 Records after insert: {countAfter}");
+
+                if (countAfter > countBefore)
                 {
-                    Console.WriteLine($"❌ Examination failed: {ex.Message}");
-                }
+                    Console.WriteLine($"✅ SUCCESS: {countAfter - countBefore} new record(s) inserted!");
 
-     
-                Console.WriteLine($"💊 DEBUG: Starting CustomizedArvProtocol creation...");
-
-                try
-                {
-             
-                    var countBefore = await _context.Database
-                        .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
+                    var newRecord = await _context.Database
+                        .SqlQueryRaw<int>($"SELECT TOP 1 CustomProtocolId as Value FROM CustomizedARV_Protocol WHERE Name = 'Protocol for Appointment #{appointmentId}' ORDER BY CustomProtocolId DESC")
                         .FirstOrDefaultAsync();
-                    Console.WriteLine($"📊 Records before insert: {countBefore}");
-
-                    Console.WriteLine($"📝 Values to insert:");
-                    Console.WriteLine($"   DoctorId: {appointment.DoctorId}");
-                    Console.WriteLine($"   PatientId: {appointment.PatientId}");
-                    Console.WriteLine($"   BaseProtocolId: NULL");
-                    Console.WriteLine($"   Name: Protocol for Appointment #{appointmentId}");
-                    Console.WriteLine($"   Description: Auto-generated from appointment booking");
-                    Console.WriteLine($"   Status: ACTIVE");
-
-                   
-                    Console.WriteLine($"🚀 Executing INSERT statement...");
-                    var protocolSql = @"
-                INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, BaseProtocolId, Name, Description, Status)
-                VALUES ({0}, {1}, {2}, {3}, {4}, {5})";
-
-                    var rowsAffected = await _context.Database.ExecuteSqlRawAsync(protocolSql,
-                        appointment.DoctorId,
-                        appointment.PatientId,
-                        DBNull.Value,
-                        $"Protocol for Appointment #{appointmentId}",
-                        "Auto-generated from appointment booking",
-                        "ACTIVE");
-
-                    Console.WriteLine($"📊 SQL ExecuteSqlRawAsync returned: {rowsAffected} rows affected");
-
-                    // Kiểm tra số lượng records sau khi insert
-                    var countAfter = await _context.Database
-                        .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM CustomizedARV_Protocol")
-                        .FirstOrDefaultAsync();
-                    Console.WriteLine($"📊 Records after insert: {countAfter}");
-
-                    if (countAfter > countBefore)
-                    {
-                        Console.WriteLine($"✅ SUCCESS: {countAfter - countBefore} new record(s) inserted!");
-
-                        // Lấy record vừa tạo để verify
-                        var newRecord = await _context.Database
-                            .SqlQueryRaw<int>($"SELECT TOP 1 CustomProtocolId as Value FROM CustomizedARV_Protocol WHERE Name = 'Protocol for Appointment #{appointmentId}' ORDER BY CustomProtocolId DESC")
-                            .FirstOrDefaultAsync();
-                        Console.WriteLine($"🆕 New record ID: {newRecord}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"⚠️ WARNING: No new records detected despite rowsAffected = {rowsAffected}");
-
-          
-                        Console.WriteLine($"🔍 Checking for potential constraints...");
-
-         
-                        var doctorExists = await _context.Users.AnyAsync(u => u.UserId == appointment.DoctorId);
-                        var patientExists = await _context.Users.AnyAsync(u => u.UserId == appointment.PatientId);
-
-                        Console.WriteLine($"🔍 Doctor ID {appointment.DoctorId} exists: {doctorExists}");
-                        Console.WriteLine($"🔍 Patient ID {appointment.PatientId} exists: {patientExists}");
-
-                        if (!doctorExists || !patientExists)
-                        {
-                            Console.WriteLine($"❌ Foreign key constraint issue detected!");
-                        }
-                    }
+                    Console.WriteLine($"🆕 New record ID: {newRecord}");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"❌ Protocol creation failed: {ex.Message}");
-                    Console.WriteLine($"🔍 Inner exception: {ex.InnerException?.Message}");
-                    Console.WriteLine($"🔍 Stack trace: {ex.StackTrace}");
-
-        
-                    try
-                    {
-                        Console.WriteLine($"🔄 Trying minimal insert...");
-
-                        var minimalSql = @"
-                    INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, Name, Status)
-                    VALUES ({0}, {1}, {2}, {3})";
-
-                        var minimalRows = await _context.Database.ExecuteSqlRawAsync(minimalSql,
-                            appointment.DoctorId,
-                            appointment.PatientId,
-                            $"Test Protocol {appointmentId}",
-                            "ACTIVE");
-
-                        Console.WriteLine($"✅ Minimal insert successful: {minimalRows} rows");
-                    }
-                    catch (Exception minEx)
-                    {
-                        Console.WriteLine($"❌ Minimal insert failed: {minEx.Message}");
-                    }
+                    Console.WriteLine($"⚠️ WARNING: No new records detected despite rowsAffected = {rowsAffected}");
                 }
-
-                Console.WriteLine($"🎉 CreateRelatedRecordsAsync completed for Appointment {appointmentId}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"💥 Unexpected error: {ex.Message}");
+                Console.WriteLine($"❌ Protocol creation failed: {ex.Message}");
+
+                // ✅ SỬA FALLBACK SQL - THÊM AppointmentId
+                try
+                {
+                    Console.WriteLine($"🔄 Trying minimal insert...");
+
+                    var minimalSql = @"
+                INSERT INTO CustomizedARV_Protocol (DoctorId, PatientId, AppointmentId, Name, Status)
+                VALUES ({0}, {1}, {2}, {3}, {4})";
+
+                    var minimalRows = await _context.Database.ExecuteSqlRawAsync(minimalSql,
+                        appointment.DoctorId,
+                        appointment.PatientId,
+                        appointmentId,          // ✅ THÊM PARAMETER NÀY
+                        $"Test Protocol {appointmentId}",
+                        "ACTIVE");
+
+                    Console.WriteLine($"✅ Minimal insert successful: {minimalRows} rows");
+                }
+                catch (Exception minEx)
+                {
+                    Console.WriteLine($"❌ Minimal insert failed: {minEx.Message}");
+                }
             }
+
+            Console.WriteLine($"🎉 CreateRelatedRecordsAsync completed for Appointment {appointmentId}");
         }
         public async Task<CreateAppointmentDTO> CreateAppointment(CreateAppointmentDTO dto)
         {

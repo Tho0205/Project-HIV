@@ -13,11 +13,11 @@ public partial class CustomizedArvProtocol
     public string? Name { get; set; }
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE";
-
+    public int? AppointmentId { get; set; }
     public User Doctor { get; set; }
     public User Patient { get; set; }
     public ARVProtocol BaseProtocol { get; set; }
-
+    public Appointment Appointment { get; set; }
     public ICollection<CustomizedArvProtocolDetail> Details { get; set; }
     public ICollection<MedicalRecord> MedicalRecords { get; set; }
 }
