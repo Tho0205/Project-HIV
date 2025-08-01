@@ -24,4 +24,7 @@ public partial class Appointment
     public ICollection<Examination> Examinations { get; set; }
     public ICollection<CustomizedArvProtocol> CustomizedProtocols { get; set; }
 
+    public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+
+
 }

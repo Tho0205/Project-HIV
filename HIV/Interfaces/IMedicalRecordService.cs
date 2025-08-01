@@ -14,5 +14,7 @@ namespace HIV.Interfaces
 
         // Phương thức mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
         Task<MedicalRecordDetailDto?> GetDetailByIdAsync(int id);
+
+        Task<MedicalRecordDto> CreateByAppointmentIdAsync(CreateMedicalRecordByAppointmentDto dto);
     }
 }

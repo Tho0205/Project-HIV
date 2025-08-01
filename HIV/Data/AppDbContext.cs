@@ -198,5 +198,11 @@ public class AppDbContext : DbContext
             .HasOne(m => m.CustomProtocol)
             .WithMany(c => c.MedicalRecords)
             .HasForeignKey(m => m.CustomProtocolId);
+
+        modelBuilder.Entity<MedicalRecord>()
+     .HasOne(m => m.Appointment)
+     .WithMany(a => a.MedicalRecords)  // Cần thêm collection vào Appointment model
+     .HasForeignKey(m => m.AppointmentId)
+     .OnDelete(DeleteBehavior.Restrict);
     }
 }

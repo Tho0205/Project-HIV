@@ -42,7 +42,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("patient/{patientId}")]
-        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        //[Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetByPatientId(int patientId)
         {
             var records = await _service.GetByPatientIdAsync(patientId);
@@ -50,10 +50,10 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
-        public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
+        //[Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        public async Task<IActionResult> Create(CreateMedicalRecordByAppointmentDto dto)
         {
-            var record = await _service.CreateAsync(dto);
+            var record = await _service.CreateByAppointmentIdAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = record.RecordId }, record);
         }
 

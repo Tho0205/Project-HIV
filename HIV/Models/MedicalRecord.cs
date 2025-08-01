@@ -9,6 +9,7 @@ namespace HIV.Models
         public int PatientId { get; set; }
         public int DoctorId { get; set; }
         public int ExamId { get; set; }
+        public int AppointmentId { get; set; }
         public int? CustomProtocolId { get; set; }
         public DateTime? ExamDate { get; set; }
         public TimeSpan? ExamTime { get; set; }
@@ -20,5 +21,7 @@ namespace HIV.Models
         public User Doctor { get; set; }
         public Examination Examination { get; set; }
         public CustomizedArvProtocol CustomProtocol { get; set; }
+
+        public virtual Appointment Appointment { get; set; }
     }
 }
