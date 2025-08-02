@@ -16,5 +16,8 @@ namespace HIV.Interfaces
         Task<MedicalRecordDetailDto?> GetDetailByIdAsync(int id);
 
         Task<MedicalRecordDto> CreateByAppointmentIdAsync(CreateMedicalRecordByAppointmentDto dto);
+
+        Task<IEnumerable<DoctorPatientSummaryDto>> GetDoctorPatientsAsync(int doctorId);
+        Task<IEnumerable<MedicalRecordDto>> GetPatientRecordsForDoctorAsync(int doctorId, int patientId);
     }
 }

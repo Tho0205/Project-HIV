@@ -160,4 +160,18 @@ namespace HIV.DTOs
     //    public string? UsageInstruction { get; set; }
     //    public string Status { get; set; }
     //}
+
+    public class DoctorPatientSummaryDto
+    {
+        public int PatientId { get; set; }
+        public string PatientName { get; set; } = "";
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public DateOnly? Birthdate { get; set; }
+        public string Gender { get; set; } = "";
+        public DateTime? LastAppointmentDate { get; set; }
+        public string? LastAppointmentStatus { get; set; }
+        public int TotalMedicalRecords { get; set; }
+        public DateTime? LastMedicalRecordDate { get; set; }
+    }
 }
