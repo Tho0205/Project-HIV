@@ -33,6 +33,24 @@ namespace HIV.Controllers
             return Ok(record);
         }
 
+        //Lấy danh sách bệnh nhân của doctor
+        [HttpGet("doctor/{doctorId}/patients")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        public async Task<IActionResult> GetDoctorPatients(int doctorId)
+        {
+            var patients = await _service.GetDoctorPatientsAsync(doctorId);
+            return Ok(patients);
+        }
+
+        //Lấy medical records của 1 bệnh nhân cho doctor
+        [HttpGet("doctor/{doctorId}/patient/{patientId}")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        public async Task<IActionResult> GetPatientRecordsForDoctor(int doctorId, int patientId)
+        {
+            var records = await _service.GetPatientRecordsForDoctorAsync(doctorId, patientId);
+            return Ok(records);
+        }
+
         [HttpGet("doctor/{doctorId}")]
         [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetByDoctorId(int doctorId)
@@ -42,7 +60,7 @@ namespace HIV.Controllers
         }
 
         [HttpGet("patient/{patientId}")]
-        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        //[Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetByPatientId(int patientId)
         {
             var records = await _service.GetByPatientIdAsync(patientId);
@@ -50,10 +68,10 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
-        public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
+        //[Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        public async Task<IActionResult> Create(CreateMedicalRecordByAppointmentDto dto)
         {
-            var record = await _service.CreateAsync(dto);
+            var record = await _service.CreateByAppointmentIdAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = record.RecordId }, record);
         }
 
@@ -75,7 +93,7 @@ namespace HIV.Controllers
             return NoContent();
         }
 
-        // Endpoint mới để lấy thông tin chi tiết bao gồm Examination và ARV Protocol
+        //Lấy thông tin chi tiết bao gồm Examination và ARV Protocol
         [HttpGet("{id}/detail")]
         [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> GetDetail(int id)

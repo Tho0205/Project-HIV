@@ -122,6 +122,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(e => e.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Examination>()
+       .HasOne(e => e.Appointment)
+       .WithMany(a => a.Examinations)
+       .HasForeignKey(e => e.AppointmentId)
+       .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<CustomizedArvProtocol>()
+       .HasOne(c => c.Appointment)
+       .WithMany(a => a.CustomizedProtocols)
+       .HasForeignKey(c => c.AppointmentId)
+       .OnDelete(DeleteBehavior.SetNull);
+
         // Examination - MedicalRecord (1:1)
         modelBuilder.Entity<Examination>()
             .HasOne(e => e.MedicalRecord)
@@ -167,6 +179,8 @@ public class AppDbContext : DbContext
             .WithMany(a => a.CustomProtocolDetails)
             .HasForeignKey(c => c.ArvId);
 
+
+
         // MedicalRecord
         modelBuilder.Entity<MedicalRecord>()
             .HasOne(m => m.Patient)
@@ -184,5 +198,11 @@ public class AppDbContext : DbContext
             .HasOne(m => m.CustomProtocol)
             .WithMany(c => c.MedicalRecords)
             .HasForeignKey(m => m.CustomProtocolId);
+
+        modelBuilder.Entity<MedicalRecord>()
+     .HasOne(m => m.Appointment)
+     .WithMany(a => a.MedicalRecords)  // Cần thêm collection vào Appointment model
+     .HasForeignKey(m => m.AppointmentId)
+     .OnDelete(DeleteBehavior.Restrict);
     }
 }

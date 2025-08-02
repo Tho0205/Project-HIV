@@ -16,6 +16,8 @@ public partial class Examination
     public string Status { get; set; } = "ACTIVE";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public int? AppointmentId { get; set; }
+    public Appointment Appointment { get; set; }
     public User Patient { get; set; }
     public User Doctor { get; set; }
 

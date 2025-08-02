@@ -1,4 +1,6 @@
-﻿namespace HIV.DTOs
+﻿using HIV.DTOs.DTOAppointment;
+
+namespace HIV.DTOs
 {
     public class MedicalRecordDto
     {
@@ -15,7 +17,68 @@
 
         public string? DoctorName { get; set; }
         public string? PatientName { get; set; }
+        public int AppointmentId { get; set; }
+        public ExaminationDto? ExaminationInfo { get; set; }
+        public CustomizedArvProtocolDto? CustomProtocolInfo { get; set; }
+
+        public AppointmentDto? AppointmentInfo { get; set; }  // ← THÊM MỚI
+
     }
+
+    public class CreateMedicalRecordByAppointmentDto
+    {
+        public int AppointmentId { get; set; }
+        public string? Summary { get; set; }
+        public DateTime? ExamDate { get; set; }
+        public TimeSpan? ExamTime { get; set; }
+    }
+
+
+    public class AppointmentDto
+    {
+        public int AppointmentId { get; set; }
+        public DateTime AppointmentDate { get; set; }
+        public string Status { get; set; }
+        public string? AppointmentType { get; set; }
+        public string? Note { get; set; }
+        public bool IsAnonymous { get; set; }
+    }
+    public class ExaminationDto
+    {
+        public int ExamId { get; set; }
+        public string? Result { get; set; }
+        public int? Cd4Count { get; set; }
+        public decimal? HivLoad { get; set; }
+        public DateOnly? ExamDate { get; set; }
+        public string Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        public int? AppointmentId { get; set; }
+    }
+
+    public class CustomizedArvProtocolDto
+    {
+        public int CustomProtocolId { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string Status { get; set; }
+        public string? BaseProtocolName { get; set; }
+
+        public int? AppointmentId { get; set; }
+        public List<ArvDetailInProtocolDto> ArvDetails { get; set; } = new List<ArvDetailInProtocolDto>();
+    }
+
+    public class ArvDetailInProtocolDto
+    {
+        public int ArvId { get; set; }
+        public string? ArvName { get; set; }
+        public string? ArvDescription { get; set; }
+        public string? Dosage { get; set; }
+        public string? UsageInstruction { get; set; }
+        public string Status { get; set; }
+    }
+
+
 
     public class CreateMedicalRecordDto
     {
@@ -23,6 +86,7 @@
         public int DoctorId { get; set; }
         public int ExamId { get; set; }
         public int? CustomProtocolId { get; set; }
+        public int AppointmentId { get; set; }
         public DateTime? ExamDate { get; set; }
         public TimeSpan? ExamTime { get; set; }
         public string? Summary { get; set; }
@@ -72,28 +136,42 @@
     }
 
     // DTO cho Customized ARV Protocol
-    public class CustomizedArvProtocolDto
-    {
-        public int CustomProtocolId { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public string Status { get; set; }
+    //public class CustomizedArvProtocolDto
+    //{
+    //    public int CustomProtocolId { get; set; }
+    //    public string? Name { get; set; }
+    //    public string? Description { get; set; }
+    //    public string Status { get; set; }
 
-        // Thông tin Base Protocol nếu có
-        public string? BaseProtocolName { get; set; }
+    //    // Thông tin Base Protocol nếu có
+    //    public string? BaseProtocolName { get; set; }
 
-        // Danh sách các ARV trong protocol
-        public List<ArvDetailInProtocolDto> ArvDetails { get; set; } = new();
-    }
+    //    // Danh sách các ARV trong protocol
+    //    public List<ArvDetailInProtocolDto> ArvDetails { get; set; } = new();
+    //}
 
     // DTO cho thông tin ARV trong protocol
-    public class ArvDetailInProtocolDto
+    //public class ArvDetailInProtocolDto
+    //{
+    //    public int ArvId { get; set; }
+    //    public string? ArvName { get; set; }
+    //    public string? ArvDescription { get; set; }
+    //    public string? Dosage { get; set; }
+    //    public string? UsageInstruction { get; set; }
+    //    public string Status { get; set; }
+    //}
+
+    public class DoctorPatientSummaryDto
     {
-        public int ArvId { get; set; }
-        public string? ArvName { get; set; }
-        public string? ArvDescription { get; set; }
-        public string? Dosage { get; set; }
-        public string? UsageInstruction { get; set; }
-        public string Status { get; set; }
+        public int PatientId { get; set; }
+        public string PatientName { get; set; } = "";
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public DateOnly? Birthdate { get; set; }
+        public string Gender { get; set; } = "";
+        public DateTime? LastAppointmentDate { get; set; }
+        public string? LastAppointmentStatus { get; set; }
+        public int TotalMedicalRecords { get; set; }
+        public DateTime? LastMedicalRecordDate { get; set; }
     }
 }

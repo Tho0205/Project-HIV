@@ -1,4 +1,5 @@
 ﻿using HIV.DTOs;
+using HIV.DTOs.DTOAppointment;
 using HIV.Interfaces;
 using HIV.Models;
 using Microsoft.EntityFrameworkCore;
@@ -63,6 +64,108 @@ namespace HIV.Repository
             };
         }
 
+        public async Task<MedicalRecordDto> CreateByAppointmentIdAsync(CreateMedicalRecordByAppointmentDto dto)
+        {
+            // 1. Lấy thông tin Appointment
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .FirstOrDefaultAsync(a => a.AppointmentId == dto.AppointmentId);
+
+            if (appointment == null)
+            {
+                throw new ArgumentException($"Appointment with ID {dto.AppointmentId} not found");
+            }
+
+            // 2. TÌM EXAMINATION - UU TIÊN AppointmentId CHÍNH XÁC TRƯỚC
+            Examination? examination = null;
+
+            // Bước 2a: Tìm theo AppointmentId chính xác trước
+            examination = await _context.Examinations
+                .FirstOrDefaultAsync(e => e.AppointmentId == dto.AppointmentId);
+
+            // Bước 2b: Nếu không tìm thấy, mới tìm theo PatientId + DoctorId + Date
+            if (examination == null)
+            {
+                examination = await _context.Examinations
+                    .Where(e => e.PatientId == appointment.PatientId
+                        && e.DoctorId == appointment.DoctorId
+                        && e.ExamDate == DateOnly.FromDateTime(appointment.AppointmentDate))
+                    .FirstOrDefaultAsync();
+            }
+
+            if (examination == null)
+            {
+                throw new ArgumentException($"No examination found for appointment {dto.AppointmentId}");
+            }
+
+            // 3. KIỂM TRA EXAMID ĐÃ CÓ MEDICALRECORD CHƯA
+            var existingRecord = await _context.MedicalRecords
+                .FirstOrDefaultAsync(mr => mr.ExamId == examination.ExamId);
+
+            if (existingRecord != null)
+            {
+                throw new InvalidOperationException(
+                    $"Examination {examination.ExamId} already has MedicalRecord {existingRecord.RecordId}. " +
+                    $"Cannot create duplicate medical record."
+                );
+            }
+
+            // 4. Tìm CustomProtocol - UU TIÊN AppointmentId CHÍNH XÁC
+            CustomizedArvProtocol? customProtocol = null;
+
+            // Bước 4a: Tìm theo AppointmentId chính xác trước
+            customProtocol = await _context.CustomizedARVProtocols
+                .FirstOrDefaultAsync(cp => cp.AppointmentId == dto.AppointmentId && cp.Status == "ACTIVE");
+
+            // Bước 4b: Nếu không tìm thấy, tìm theo PatientId + DoctorId
+            if (customProtocol == null)
+            {
+                customProtocol = await _context.CustomizedARVProtocols
+                    .Where(cp => cp.PatientId == appointment.PatientId
+                        && cp.DoctorId == appointment.DoctorId
+                        && cp.Status == "ACTIVE")
+                    .OrderByDescending(cp => cp.CustomProtocolId) // Lấy mới nhất
+                    .FirstOrDefaultAsync();
+            }
+
+            // 5. Tạo MedicalRecord
+            var entity = new MedicalRecord
+            {
+                PatientId = appointment.PatientId,
+                DoctorId = appointment.DoctorId,
+                ExamId = examination.ExamId,
+                CustomProtocolId = customProtocol?.CustomProtocolId,
+                AppointmentId = dto.AppointmentId,
+                ExamDate = dto.ExamDate ?? appointment.AppointmentDate,
+                ExamTime = dto.ExamTime ?? TimeSpan.FromHours(9),
+                Summary = dto.Summary ?? $"Medical record created from appointment #{dto.AppointmentId}",
+                IssuedAt = DateTime.UtcNow,
+                Status = "ACTIVE"
+            };
+
+            _context.MedicalRecords.Add(entity);
+            await _context.SaveChangesAsync();
+
+            // 6. Return DTO
+            return new MedicalRecordDto
+            {
+                RecordId = entity.RecordId,
+                PatientId = entity.PatientId,
+                DoctorId = entity.DoctorId,
+                ExamId = entity.ExamId,
+                CustomProtocolId = entity.CustomProtocolId,
+                AppointmentId = entity.AppointmentId,
+                ExamDate = entity.ExamDate,
+                ExamTime = entity.ExamTime,
+                Summary = entity.Summary ?? "",
+                Status = entity.Status ?? "",
+                IssuedAt = entity.IssuedAt,
+                DoctorName = appointment.Doctor?.FullName ?? "",
+                PatientName = appointment.Patient?.FullName ?? ""
+            };
+        }
+
         public async Task<MedicalRecordDto> CreateAsync(CreateMedicalRecordDto dto)
         {
             var entity = new MedicalRecord
@@ -120,11 +223,19 @@ namespace HIV.Repository
                 .ToListAsync();
         }
 
+
         public async Task<IEnumerable<MedicalRecordDto>> GetByPatientIdAsync(int patientId)
         {
             return await _context.MedicalRecords
                 .Include(m => m.Patient)
                 .Include(m => m.Doctor)
+                .Include(m => m.Examination)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.BaseProtocol)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.Details)
+                        .ThenInclude(d => d.Arv)
+                .Include(m => m.Appointment)
                 .Where(m => m.PatientId == patientId && m.Status != "DELETED")
                 .Select(m => new MedicalRecordDto
                 {
@@ -133,14 +244,66 @@ namespace HIV.Repository
                     DoctorId = m.DoctorId,
                     ExamId = m.ExamId,
                     CustomProtocolId = m.CustomProtocolId,
+                    AppointmentId = m.AppointmentId,
                     ExamDate = m.ExamDate,
                     ExamTime = m.ExamTime,
-                    Summary = m.Summary,
+                    Summary = m.Summary != null ? m.Summary : "",
                     Status = m.Status,
                     IssuedAt = m.IssuedAt,
-                    DoctorName = m.Doctor.FullName,
-                    PatientName = m.Patient.FullName
+                    DoctorName = m.Doctor != null ? m.Doctor.FullName : "Unknown Doctor",
+                    PatientName = m.Patient != null ? m.Patient.FullName : "Unknown Patient",
+
+                    // CHỈ LẤY EXAMINATION THUỘC CÙNG APPOINTMENT
+                    ExaminationInfo = m.Examination != null && m.Examination.AppointmentId == m.AppointmentId
+                        ? new ExaminationDto
+                        {
+                            ExamId = m.Examination.ExamId,
+                            Result = m.Examination.Result != null ? m.Examination.Result : "No result",
+                            Cd4Count = m.Examination.Cd4Count,
+                            HivLoad = m.Examination.HivLoad,
+                            ExamDate = m.Examination.ExamDate,
+                            Status = m.Examination.Status != null ? m.Examination.Status : "UNKNOWN",
+                            CreatedAt = m.Examination.CreatedAt
+                        } : null,
+
+                    // CHỈ LẤY CUSTOM PROTOCOL THUỘC CÙNG APPOINTMENT
+                    CustomProtocolInfo = m.CustomProtocol != null && m.CustomProtocol.AppointmentId == m.AppointmentId
+                        ? new CustomizedArvProtocolDto
+                        {
+                            CustomProtocolId = m.CustomProtocol.CustomProtocolId,
+                            Name = m.CustomProtocol.Name != null ? m.CustomProtocol.Name : $"Protocol #{m.CustomProtocol.CustomProtocolId}",
+                            Description = m.CustomProtocol.Description != null ? m.CustomProtocol.Description : "No description available",
+                            Status = m.CustomProtocol.Status != null ? m.CustomProtocol.Status : "UNKNOWN",
+                            BaseProtocolName = m.CustomProtocol.BaseProtocol != null ? m.CustomProtocol.BaseProtocol.Name : "No base protocol",
+
+                            // ARV Details - CHỈ LẤY TỪ PROTOCOL CỦA APPOINTMENT NÀY
+                            ArvDetails = m.CustomProtocol.Details != null && m.CustomProtocol.Details.Any() ?
+                                m.CustomProtocol.Details
+                                    .Where(d => d.Arv != null && d.Status == "ACTIVE")
+                                    .Select(d => new ArvDetailInProtocolDto
+                                    {
+                                        ArvId = d.ArvId,
+                                        ArvName = d.Arv.Name != null ? d.Arv.Name : "Unknown ARV",
+                                        ArvDescription = d.Arv.Description != null ? d.Arv.Description : "No description",
+                                        Dosage = d.Dosage != null ? d.Dosage : "Not specified",
+                                        UsageInstruction = d.UsageInstruction != null ? d.UsageInstruction : "Follow doctor's instruction",
+                                        Status = d.Status != null ? d.Status : "ACTIVE"
+                                    }).ToList()
+                                : new List<ArvDetailInProtocolDto>()
+                        } : null,
+
+                    // Appointment Info
+                    AppointmentInfo = m.Appointment != null ? new AppointmentDto
+                    {
+                        AppointmentId = m.Appointment.AppointmentId,
+                        AppointmentDate = m.Appointment.AppointmentDate,
+                        Status = m.Appointment.Status != null ? m.Appointment.Status : "UNKNOWN",
+                        AppointmentType = m.Appointment.AppoinmentType != null ? m.Appointment.AppoinmentType : "Regular",
+                        Note = m.Appointment.Note != null ? m.Appointment.Note : "",
+                        IsAnonymous = m.Appointment.IsAnonymous
+                    } : null
                 })
+                .OrderByDescending(m => m.ExamDate != null ? m.ExamDate : DateTime.MinValue)
                 .ToListAsync();
         }
 
@@ -248,6 +411,174 @@ namespace HIV.Repository
             }
 
             return result;
+        }
+
+        // Lấy danh sách bệnh nhân của doctor (có appointment gần nhất với examination hoặc custom protocol)
+        public async Task<IEnumerable<DoctorPatientSummaryDto>> GetDoctorPatientsAsync(int doctorId)
+        {
+            // Bước 1: Lấy appointment gần nhất của từng bệnh nhân với doctor này
+            var latestAppointmentsByPatient = await _context.Appointments
+                .Where(a => a.DoctorId == doctorId && a.Status != "CANCELLED")
+                .GroupBy(a => a.PatientId)
+                .Select(g => new {
+                    PatientId = g.Key,
+                    LatestAppointment = g.OrderByDescending(a => a.CreatedAt).First()
+                })
+                .ToListAsync();
+
+            // Bước 2: Lọc những appointment có Examination HOẶC CustomizedArvProtocol
+            var validAppointmentIds = new List<int>();
+
+            foreach (var item in latestAppointmentsByPatient)
+            {
+                var appointmentId = item.LatestAppointment.AppointmentId;
+
+                // Kiểm tra có Examination với AppointmentId này không
+                var hasExamination = await _context.Examinations
+                    .AnyAsync(e => e.AppointmentId == appointmentId);
+
+                // Kiểm tra có CustomizedArvProtocol với AppointmentId này không
+                var hasCustomProtocol = await _context.CustomizedARVProtocols
+                    .AnyAsync(cp => cp.AppointmentId == appointmentId);
+
+                // Nếu có ít nhất 1 trong 2, thì valid
+                if (hasExamination || hasCustomProtocol)
+                {
+                    validAppointmentIds.Add(appointmentId);
+                }
+            }
+
+            // Bước 3: Lấy thông tin bệnh nhân từ các appointment valid
+            var validPatientData = latestAppointmentsByPatient
+                .Where(item => validAppointmentIds.Contains(item.LatestAppointment.AppointmentId))
+                .ToList();
+
+            var patientIds = validPatientData.Select(p => p.PatientId).ToList();
+
+            if (!patientIds.Any())
+            {
+                return new List<DoctorPatientSummaryDto>();
+            }
+
+            // Bước 4: Lấy thông tin chi tiết của các bệnh nhân
+            var patients = await _context.Users
+                .Include(u => u.Account)
+                .Where(u => patientIds.Contains(u.UserId))
+                .ToListAsync();
+
+            var result = new List<DoctorPatientSummaryDto>();
+
+            foreach (var patient in patients)
+            {
+                var appointmentData = validPatientData.First(p => p.PatientId == patient.UserId);
+
+                var dto = new DoctorPatientSummaryDto
+                {
+                    PatientId = patient.UserId,
+                    PatientName = patient.FullName != null ? patient.FullName : "Không có tên",
+                    Phone = patient.Phone,
+                    Email = patient.Account != null ? patient.Account.Email : null,
+                    Birthdate = patient.Birthdate,
+                    Gender = patient.Gender != null ? patient.Gender : "Khác",
+                    LastAppointmentDate = appointmentData.LatestAppointment.AppointmentDate,
+                    LastAppointmentStatus = appointmentData.LatestAppointment.Status,
+                    TotalMedicalRecords = await _context.MedicalRecords
+                        .CountAsync(mr => mr.PatientId == patient.UserId && mr.DoctorId == doctorId && mr.Status != "DELETED"),
+                    LastMedicalRecordDate = await _context.MedicalRecords
+                        .Where(mr => mr.PatientId == patient.UserId && mr.DoctorId == doctorId && mr.Status != "DELETED")
+                        .OrderByDescending(mr => mr.IssuedAt)
+                        .Select(mr => mr.IssuedAt)
+                        .FirstOrDefaultAsync()
+                };
+
+                result.Add(dto);
+            }
+
+            return result.OrderByDescending(p => p.LastAppointmentDate).ToList();
+        }
+
+        // Lấy medical records của 1 bệnh nhân cho doctor (sắp xếp từ mới đến cũ)
+        public async Task<IEnumerable<MedicalRecordDto>> GetPatientRecordsForDoctorAsync(int doctorId, int patientId)
+        {
+            return await _context.MedicalRecords
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Include(m => m.Examination)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.BaseProtocol)
+                .Include(m => m.CustomProtocol)
+                    .ThenInclude(cp => cp.Details)
+                        .ThenInclude(d => d.Arv)
+                .Include(m => m.Appointment)
+                .Where(m => m.DoctorId == doctorId && m.PatientId == patientId && m.Status != "DELETED")
+                .OrderByDescending(m => m.IssuedAt) // Sắp xếp từ mới đến cũ
+                .Select(m => new MedicalRecordDto
+                {
+                    RecordId = m.RecordId,
+                    PatientId = m.PatientId,
+                    DoctorId = m.DoctorId,
+                    ExamId = m.ExamId,
+                    CustomProtocolId = m.CustomProtocolId,
+                    AppointmentId = m.AppointmentId,
+                    ExamDate = m.ExamDate,
+                    ExamTime = m.ExamTime,
+                    Summary = m.Summary != null ? m.Summary : "",
+                    Status = m.Status,
+                    IssuedAt = m.IssuedAt,
+                    DoctorName = m.Doctor.FullName != null ? m.Doctor.FullName : "Unknown Doctor",
+                    PatientName = m.Patient.FullName != null ? m.Patient.FullName : "Unknown Patient",
+
+                    // Thông tin Examination
+                    ExaminationInfo = m.Examination != null && m.Examination.AppointmentId == m.AppointmentId
+                        ? new ExaminationDto
+                        {
+                            ExamId = m.Examination.ExamId,
+                            Result = m.Examination.Result != null ? m.Examination.Result : "No result",
+                            Cd4Count = m.Examination.Cd4Count,
+                            HivLoad = m.Examination.HivLoad,
+                            ExamDate = m.Examination.ExamDate,
+                            Status = m.Examination.Status != null ? m.Examination.Status : "UNKNOWN",
+                            CreatedAt = m.Examination.CreatedAt,
+                            AppointmentId = m.Examination.AppointmentId
+                        } : null,
+
+                    // Thông tin Custom Protocol
+                    CustomProtocolInfo = m.CustomProtocol != null && m.CustomProtocol.AppointmentId == m.AppointmentId
+                        ? new CustomizedArvProtocolDto
+                        {
+                            CustomProtocolId = m.CustomProtocol.CustomProtocolId,
+                            Name = m.CustomProtocol.Name != null ? m.CustomProtocol.Name : $"Protocol #{m.CustomProtocol.CustomProtocolId}",
+                            Description = m.CustomProtocol.Description != null ? m.CustomProtocol.Description : "No description available",
+                            Status = m.CustomProtocol.Status != null ? m.CustomProtocol.Status : "UNKNOWN",
+                            BaseProtocolName = m.CustomProtocol.BaseProtocol != null ? m.CustomProtocol.BaseProtocol.Name : "No base protocol",
+                            AppointmentId = m.CustomProtocol.AppointmentId,
+                            ArvDetails = m.CustomProtocol.Details != null && m.CustomProtocol.Details.Any() ?
+                                m.CustomProtocol.Details
+                                    .Where(d => d.Arv != null && d.Status == "ACTIVE")
+                                    .Select(d => new ArvDetailInProtocolDto
+                                    {
+                                        ArvId = d.ArvId,
+                                        ArvName = d.Arv.Name != null ? d.Arv.Name : "Unknown ARV",
+                                        ArvDescription = d.Arv.Description != null ? d.Arv.Description : "No description",
+                                        Dosage = d.Dosage != null ? d.Dosage : "Not specified",
+                                        UsageInstruction = d.UsageInstruction != null ? d.UsageInstruction : "Follow doctor's instruction",
+                                        Status = d.Status != null ? d.Status : "ACTIVE"
+                                    }).ToList()
+                                : new List<ArvDetailInProtocolDto>()
+                        } : null,
+
+                    // Thông tin Appointment
+                    AppointmentInfo = m.Appointment != null ? new AppointmentDto
+                    {
+                        AppointmentId = m.Appointment.AppointmentId,
+                        AppointmentDate = m.Appointment.AppointmentDate,
+                        Status = m.Appointment.Status != null ? m.Appointment.Status : "UNKNOWN",
+                        AppointmentType = m.Appointment.AppoinmentType != null ? m.Appointment.AppoinmentType : "Regular",
+                        Note = m.Appointment.Note != null ? m.Appointment.Note : "",
+                        IsAnonymous = m.Appointment.IsAnonymous
+                    } : null
+                })
+                .ToListAsync();
         }
     }
 }
