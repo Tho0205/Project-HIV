@@ -65,12 +65,6 @@ namespace HIV.Repository
                         a.Status == "SCHEDULED" || a.Status == "CONFIRMED");
                 }
 
-                //var patientIds = await appointmentsQuery
-                //    .Where(a => a.Status != "CANCELLED") // Thêm dòng này để loại bỏ lịch đã hủy
-                //    .Select(a => a.PatientId)
-                //    .Distinct()
-                //    .ToListAsync();
-
                 // Lấy appointment mới nhất của mỗi bệnh nhân
                 var latestAppointments = await _context.Appointments
                     .Where(a => a.Status != "CANCELLED")
@@ -262,12 +256,6 @@ namespace HIV.Repository
                 }
 
                 // 1. Lấy danh sách patient IDs
-                //var patientIds = await _context.Appointments
-                //    .Where(a => a.DoctorId == doctorUser.UserId)
-                //    .Select(a => a.PatientId)
-                //    .Distinct()
-                //    .ToListAsync();
-
                 // Thay đổi cách lấy patientIds để chỉ tính bệnh nhân có appointment mới nhất với doctor này
                 var latestAppointmentsByPatient = await _context.Appointments
                     .Where(a => a.Status != "CANCELLED")
@@ -485,11 +473,6 @@ namespace HIV.Repository
                         doctorId, patientId);
                     return false;
                 }
-
-                // Kiểm tra appointment với userId của patient
-                //var hasAccess = await _context.Appointments
-                //    .AnyAsync(a => a.DoctorId == doctorUser.UserId &&
-                //                  a.PatientId == patientUser.UserId);
 
                 // Kiểm tra appointment mới nhất của bệnh nhân có phải với doctor này không
                 var latestAppointment = await _context.Appointments
