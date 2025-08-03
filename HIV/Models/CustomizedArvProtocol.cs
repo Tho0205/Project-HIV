@@ -14,6 +14,8 @@ public partial class CustomizedArvProtocol
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE";
     public int? AppointmentId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public User Doctor { get; set; }
     public User Patient { get; set; }
     public ARVProtocol BaseProtocol { get; set; }
