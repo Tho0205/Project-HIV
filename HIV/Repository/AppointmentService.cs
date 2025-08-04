@@ -344,7 +344,6 @@ namespace HIV.Repository
                 }
                 if(appointment.Status == "CHECKED_IN" && appointment.IsAnonymous == false)
                 {
-                    await _notificationService.CreateAppointmentReminders(appointment.AppointmentId);
                     await CreateRelatedRecordsAsync(appointment.AppointmentId);
 
                 }
