@@ -137,17 +137,16 @@ namespace HIV.Repository
 
         public async Task CreateMedicationReminders(int patientId)
         {
-            // Lấy phác đồ điều trị hiện tại của bệnh nhân
             var protocol = await _context.CustomizedARVProtocols
                 .Include(p => p.Details)
-                .ThenInclude(d => d.Arv)
+                    .ThenInclude(d => d.Arv)
                 .Where(p => p.PatientId == patientId && p.Status == "ACTIVE")
                 .OrderByDescending(p => p.CustomProtocolId)
                 .FirstOrDefaultAsync();
 
             if (protocol == null) return;
 
-            // Xóa các thông báo cũ về thuốc
+            // Huỷ nhắc nhở cũ
             var oldReminders = await _context.Notification
                 .Where(n => n.UserId == patientId && n.Type == "medication" && n.Status == "ACTIVE")
                 .ToListAsync();
@@ -157,19 +156,40 @@ namespace HIV.Repository
                 reminder.Status = "COMPLETED";
             }
 
-            // Tạo thông báo mới cho mỗi loại thuốc
-            foreach (var detail in protocol.Details.Where(d => d.Status == "ACTIVE"))
+            // Nhóm thuốc theo hướng dẫn sử dụng
+            var groupedByUsage = protocol.Details
+                .Where(d => d.Status == "ACTIVE")
+                .GroupBy(d => d.UsageInstruction?.Trim() ?? "Khác")
+                .ToList();
+
+            for (int i = 0; i < 7; i++)
             {
-                // Tạo thông báo hàng ngày trong 7 ngày tới
-                for (int i = 0; i < 7; i++)
+                var currentDate = DateTime.Today.AddDays(i);
+
+                foreach (var group in groupedByUsage)
                 {
-                    var reminderTime = DateTime.Today.AddDays(i).AddHours(20); // 8PM mỗi ngày
-                    
+                    var usageTime = group.Key;
+                    var hour = usageTime switch
+                    {
+                        string s when s.Contains("sáng", StringComparison.OrdinalIgnoreCase) => 6,
+                        string s when s.Contains("tối", StringComparison.OrdinalIgnoreCase) => 18,
+                        string s when s.Contains("trước ăn", StringComparison.OrdinalIgnoreCase) => 7,
+                        string s when s.Contains("trước ngủ", StringComparison.OrdinalIgnoreCase) => 21,
+                        _ => 20
+                    };
+
+                    var reminderTime = currentDate.AddHours(hour);
+
+                    var messageLines = group.Select(d =>
+                        $"- {d.Arv?.Name} {d.Dosage}"
+                    );
+                    var fullMessage = $"💊 Nhắc bạn uống thuốc {usageTime}:\n" + string.Join("\n", messageLines);
+
                     await CreateNotification(new CreateNotificationDto
                     {
                         UserId = patientId,
                         Type = "medication",
-                        Message = $"Uống thuốc {detail.Arv?.Name} - Liều lượng: {detail.Dosage}",
+                        Message = fullMessage,
                         ScheduledTime = reminderTime,
                         ProtocolId = protocol.CustomProtocolId
                     });
@@ -183,11 +203,13 @@ namespace HIV.Repository
         {
             var appointment = await _context.Appointments
                 .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .Include(a => a.Schedule)
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
             if (appointment == null || appointment.PatientId == null) return;
 
-            // Xóa các thông báo cũ về lịch hẹn này
+            // Xóa thông báo cũ liên quan lịch hẹn này
             var oldReminders = await _context.Notification
                 .Where(n => n.AppointmentId == appointmentId && n.Status == "ACTIVE")
                 .ToListAsync();
@@ -197,19 +219,31 @@ namespace HIV.Repository
                 reminder.Status = "COMPLETED";
             }
 
-            // Tạo thông báo nhắc lịch hẹn
-            var reminderTimes = new[]
-            {
-                appointment.AppointmentDate.AddHours(-2)   // 2 giờ trước
-            };
+            var doctorName = appointment.Doctor?.FullName ?? "Bác sĩ chưa xác định";
+            var room = appointment.Schedule?.Room ?? "Phòng chưa rõ";
+            var appointmentTime = appointment.AppointmentDate;
 
-            foreach (var reminderTime in reminderTimes)
+            string messageBase = $"Lịch hẹn với bác sĩ {doctorName} vào {appointmentTime:HH:mm dd/MM/yyyy} tại phòng {room}.";
+
+            // 🟢 Gửi thông báo NGAY khi xác nhận
+            await CreateNotification(new CreateNotificationDto
+            {
+                UserId = appointment.PatientId,
+                Type = "appointment",
+                Message = $"📅 {messageBase}",
+                ScheduledTime = DateTime.Now,
+                AppointmentId = appointmentId
+            });
+
+            // 🟡 Gửi trước 12 tiếng
+            var reminderTime = appointmentTime.AddHours(-12);
+            if (reminderTime > DateTime.Now)
             {
                 await CreateNotification(new CreateNotificationDto
                 {
                     UserId = appointment.PatientId,
                     Type = "appointment",
-                    Message = $"Lịch hẹn với bác sĩ vào {appointment.AppointmentDate:HH:mm dd/MM/yyyy}",
+                    Message = $"🔔 Nhắc lịch: {messageBase}",
                     ScheduledTime = reminderTime,
                     AppointmentId = appointmentId
                 });

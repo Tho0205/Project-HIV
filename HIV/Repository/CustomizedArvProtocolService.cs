@@ -11,11 +11,14 @@ namespace HIV.Repository
     {
         private readonly AppDbContext _context;
         private readonly IMedicalRecordService _medicalRecordService;
+        private readonly INotificationService _notificationService;
 
-        public CustomizedArvProtocolService(AppDbContext context, IMedicalRecordService medicalRecordService)
+        public CustomizedArvProtocolService(AppDbContext context, IMedicalRecordService medicalRecordService
+            , INotificationService notificationService)
         {
             _context = context;
             _medicalRecordService = medicalRecordService;
+            _notificationService = notificationService;
         }
 
         public async Task<List<PatientWithProtocolDto>> GetPatientsWithProtocolsAsync(int doctorId)
@@ -205,6 +208,7 @@ namespace HIV.Repository
                 }
 
                 await _context.SaveChangesAsync();
+                await _notificationService.CreateMedicationReminders(patientId);
                 await transaction.CommitAsync();
                 return true;
             }
