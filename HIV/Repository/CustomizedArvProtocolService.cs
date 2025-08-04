@@ -71,7 +71,7 @@ namespace HIV.Repository
                 .Include(cp => cp.Details)
                 .ThenInclude(d => d.Arv)
                 .Include(cp => cp.BaseProtocol)
-                .Where(cp => cp.PatientId == patientId && cp.Status == "ACTIVE")
+                .Where(cp => cp.PatientId == patientId && cp.Status == "ACTIVE" && cp.BaseProtocolId != null)
                 .OrderByDescending(cp => cp.CustomProtocolId)
                 .FirstOrDefaultAsync();
 
