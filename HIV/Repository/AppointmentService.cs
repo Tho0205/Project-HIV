@@ -339,7 +339,7 @@ namespace HIV.Repository
                     if (appointment.PatientId != null)
                     {
 
-                        await _notificationService.CreateMedicationReminders(appointment.PatientId);
+                        await _notificationService.CreateAppointmentReminders(appointment.AppointmentId);
                     }
                 }
                 if(appointment.Status == "CHECKED_IN" && appointment.IsAnonymous == false)
