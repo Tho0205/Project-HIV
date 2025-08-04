@@ -69,7 +69,7 @@ namespace HIV.Repository
                     DoctorId = appointment.DoctorId,
                     AppointmentId = appointmentId,  // ✅ Đã có
                     ExamDate = DateOnly.FromDateTime(appointment.AppointmentDate),
-                    Result = "Scheduled for examination",
+                    Result = null,
                     Cd4Count = null,
                     HivLoad = null,
                     Status = "ACTIVE",
