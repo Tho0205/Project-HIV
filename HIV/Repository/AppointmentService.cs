@@ -149,7 +149,7 @@ namespace HIV.Repository
                         appointment.DoctorId,
                         appointment.PatientId,
                         appointmentId,          // ✅ THÊM PARAMETER NÀY
-                        $"Test Protocol {appointmentId}",
+                        $"Chưa có phát đồ",
                         "ACTIVE");
 
                     Console.WriteLine($"✅ Minimal insert successful: {minimalRows} rows");
