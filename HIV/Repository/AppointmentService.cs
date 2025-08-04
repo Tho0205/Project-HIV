@@ -166,20 +166,44 @@ namespace HIV.Repository
         {
             try
             {
+                Console.WriteLine($"🚀 Creating appointment for ScheduleId: {dto.ScheduleId}");
+
                 if (await _context.Schedules.FindAsync(dto.ScheduleId) == null)
                 {
                     throw new ArgumentException("ScheduleID không tồn tại");
                 }
-
                 if (await _context.Users.FindAsync(dto.doctorId) == null)
                 {
                     throw new ArgumentException("DoctorID không tồn tại");
                 }
-
                 if (await _context.Users.FindAsync(dto.PatientId) == null)
                 {
                     throw new ArgumentException("PatientID không tồn tại");
                 }
+
+
+                var existingAppointments = await _context.Appointments
+                    .Where(a => a.ScheduleId == dto.ScheduleId)
+                    .ToListAsync();
+
+                Console.WriteLine($"📊 All appointments for schedule {dto.ScheduleId}:");
+                foreach (var app in existingAppointments)
+                {
+                    Console.WriteLine($"   - AppointmentId: {app.AppointmentId}, Status: {app.Status}, PatientId: {app.PatientId}");
+                }
+
+                var activeAppointmentsCount = existingAppointments
+                    .Where(a => a.Status != "CANCELLED" && a.Status != "REJECTED")
+                    .Count();
+
+
+                const int MAX_APPOINTMENTS_PER_SCHEDULE = 5;
+
+                if (activeAppointmentsCount >= MAX_APPOINTMENTS_PER_SCHEDULE)
+                {
+                    throw new InvalidOperationException($"Lịch khám này đã đầy ({activeAppointmentsCount}/{MAX_APPOINTMENTS_PER_SCHEDULE} người đã đặt)");
+                }
+
 
                 var appoint = new Appointment
                 {
@@ -192,26 +216,52 @@ namespace HIV.Repository
                     CreatedAt = DateTime.Now,
                     AppointmentDate = dto.AppointmentDate
                 };
+
                 _context.Appointments.Add(appoint);
 
                 var sche = await _context.Schedules.FindAsync(appoint.ScheduleId);
                 if (sche != null)
                 {
-                    sche.Status = "INACTIVE";
+                    Console.WriteLine($"📅 Current schedule status: {sche.Status}");
+
+                    var totalAppointments = activeAppointmentsCount + 1;
+
+                    if (totalAppointments >= MAX_APPOINTMENTS_PER_SCHEDULE)
+                    {
+                        var oldStatus = sche.Status;
+                        sche.Status = "INACTIVE";
+                    }
+                    else
+                    {
+                        sche.Status = "ACTIVE";
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Schedule {dto.ScheduleId} not found!");
                 }
 
-                await _context.SaveChangesAsync();
+
+                var result = await _context.SaveChangesAsync();
+
+
+                var updatedSchedule = await _context.Schedules.FindAsync(dto.ScheduleId);
+                if (updatedSchedule != null)
+                {
+                    Console.WriteLine($"🔍 VERIFIED: Schedule {dto.ScheduleId} status after save: {updatedSchedule.Status}");
+                }
+
                 return dto;
             }
             catch (DbUpdateException ex)
             {
                 var innerException = ex.InnerException?.Message ?? ex.Message;
-                Console.WriteLine($"Database update error: {innerException}");
+                Console.WriteLine($"💥 Database update error: {innerException}");
                 throw new Exception($"Lỗi khi lưu lịch hẹn: {innerException}", ex);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating appointment: {ex.Message}");
+                Console.WriteLine($"💥 Error creating appointment: {ex.Message}");
                 throw;
             }
         }
