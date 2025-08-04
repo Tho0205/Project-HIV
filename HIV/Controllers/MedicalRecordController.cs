@@ -68,7 +68,7 @@ namespace HIV.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Staff,Manager,Doctor,Patient")]
+        [Authorize(Roles = "Staff,Manager,Doctor,Patient")]
         public async Task<IActionResult> Create(CreateMedicalRecordByAppointmentDto dto)
         {
             var record = await _service.CreateByAppointmentIdAsync(dto);
