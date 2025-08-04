@@ -17,7 +17,7 @@ namespace HIV.Repository
         public async Task<List<NotificationDto>> GetNotificationsForUser(int userId)
         {
             var notifications = await _context.Notification
-                .Where(n => n.UserId == userId && n.Status == "ACTIVE")
+                .Where(n => n.UserId == userId && n.Status == "ACTIVE" && n.ScheduledTime <= DateTime.Now)
                 .OrderByDescending(n => n.ScheduledTime)
                 .ToListAsync();
 
