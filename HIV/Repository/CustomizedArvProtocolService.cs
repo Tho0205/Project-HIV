@@ -236,6 +236,7 @@ namespace HIV.Repository
                     Name = cp.Name ?? "Unnamed Protocol",
                     Description = cp.Description,
                     Status = cp.Status ?? "ACTIVE",
+                    CreatedAt = cp.CreatedAt,
                     Details = cp.Details
                         .Where(d => d.Status == "ACTIVE")
                         .Select(d => new CustomProtocolDetailDto
