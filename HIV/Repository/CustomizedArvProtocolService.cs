@@ -115,6 +115,18 @@ namespace HIV.Repository
                 throw new ArgumentException("One or more ARV IDs are invalid");
             }
 
+            // 🛠️ NEW: Cập nhật các phác đồ đang ACTIVE về COMPLETED
+            var activeProtocols = await _context.CustomizedARVProtocols
+                .Where(p => p.PatientId == patientId && p.Status == "ACTIVE")
+                .ToListAsync();
+
+            foreach (var oldProtocol in activeProtocols)
+            {
+                oldProtocol.Status = "COMPLETED";
+            }
+            _context.CustomizedARVProtocols.UpdateRange(activeProtocols);
+
+            // Tạo phác đồ mới
             var protocol = new CustomizedArvProtocol
             {
                 DoctorId = doctorId,
