@@ -16,17 +16,16 @@ namespace HIV.Repository
             _logger = logger;
         }
         public async Task<DoctorPatientsResponseDto> GetDoctorPatientsAsync(
-            int doctorId,
-            DateTime? scheduleDate = null,
-            bool hasScheduleOnly = false,
-            string sortBy = "full_name",
-            string order = "asc",
-            int page = 1,
-            int pageSize = 8)
+    int doctorId,
+    DateTime? scheduleDate = null,
+    bool hasScheduleOnly = false,
+    string sortBy = "full_name",
+    string order = "asc",
+    int page = 1,
+    int pageSize = 8)
         {
             try
             {
-                // Get User from doctorId
                 var doctorUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == doctorId);
 
@@ -42,12 +41,10 @@ namespace HIV.Repository
                     };
                 }
 
-                // Query để lấy patient IDs
                 var appointmentsQuery = _context.Appointments
                     .Include(a => a.Schedule)
                     .Where(a => a.DoctorId == doctorUser.UserId);
 
-                // Lọc theo ngày schedule nếu có
                 if (scheduleDate.HasValue)
                 {
                     var startDate = scheduleDate.Value.Date;
@@ -58,14 +55,12 @@ namespace HIV.Repository
                         a.Schedule.ScheduledTime < endDate);
                 }
 
-                // Chỉ lấy bệnh nhân có lịch hẹn đã được đặt
                 if (hasScheduleOnly)
                 {
                     appointmentsQuery = appointmentsQuery.Where(a =>
                         a.Status == "SCHEDULED" || a.Status == "CONFIRMED");
                 }
 
-                // Lấy appointment mới nhất của mỗi bệnh nhân
                 var latestAppointments = await _context.Appointments
                     .Where(a => a.Status != "CANCELLED")
                     .GroupBy(a => a.PatientId)
@@ -75,13 +70,11 @@ namespace HIV.Repository
                     })
                     .ToListAsync();
 
-                // Chỉ lấy bệnh nhân có appointment mới nhất với doctor hiện tại
                 var patientIds = latestAppointments
                     .Where(la => la.LatestAppointment.DoctorId == doctorUser.UserId)
                     .Select(la => la.PatientId)
                     .ToList();
 
-                // Nếu có filter theo ngày, thêm điều kiện
                 if (scheduleDate.HasValue)
                 {
                     var startDate = scheduleDate.Value.Date;
@@ -120,7 +113,6 @@ namespace HIV.Repository
                                a.User.Status != "DELETED")
                     .AsQueryable();
 
-                // Áp dụng sắp xếp
                 query = ApplySorting(query, sortBy, order);
 
                 var totalCount = await query.CountAsync();
@@ -150,6 +142,38 @@ namespace HIV.Repository
                             .FirstOrDefault()
                     })
                     .ToListAsync();
+
+                // Ẩn thông tin nếu bệnh nhân có lịch hẹn ẩn danh hôm nay
+                if (scheduleDate.HasValue)
+                {
+                    var startDate = scheduleDate.Value.Date;
+                    var endDate = startDate.AddDays(1);
+
+                    var anonymousAppointments = await _context.Appointments
+                        .Include(a => a.Schedule)
+                        .Where(a =>
+                            a.DoctorId == doctorId &&
+                            a.Schedule != null &&
+                            a.Schedule.ScheduledTime >= startDate &&
+                            a.Schedule.ScheduledTime < endDate &&
+                            a.IsAnonymous == true)
+                        .ToListAsync();
+
+                    var anonymousPatientIds = anonymousAppointments
+                        .Select(a => a.PatientId)
+                        .Distinct()
+                        .ToHashSet();
+
+                    foreach (var patient in patients)
+                    {
+                        if (anonymousPatientIds.Contains(patient.UserId))
+                        {
+                            patient.FullName = "Bệnh nhân ẩn danh";
+                            patient.Email = "*****";
+                            patient.UserAvatar = null;
+                        }
+                    }
+                }
 
                 return new DoctorPatientsResponseDto
                 {

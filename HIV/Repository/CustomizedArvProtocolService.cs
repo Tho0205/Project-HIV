@@ -115,6 +115,18 @@ namespace HIV.Repository
                 throw new ArgumentException("One or more ARV IDs are invalid");
             }
 
+            // 🛠️ NEW: Cập nhật các phác đồ đang ACTIVE về COMPLETED
+            var activeProtocols = await _context.CustomizedARVProtocols
+                .Where(p => p.PatientId == patientId && p.Status == "ACTIVE")
+                .ToListAsync();
+
+            foreach (var oldProtocol in activeProtocols)
+            {
+                oldProtocol.Status = "COMPLETED";
+            }
+            _context.CustomizedARVProtocols.UpdateRange(activeProtocols);
+
+            // Tạo phác đồ mới
             var protocol = new CustomizedArvProtocol
             {
                 DoctorId = doctorId,
@@ -164,8 +176,8 @@ namespace HIV.Repository
                         .FirstOrDefaultAsync(cp => cp.CustomProtocolId == request.ProtocolId);
 
                     if (protocolToActivate == null) return false;
-
                     protocolToActivate.Status = "ACTIVE";
+                    protocolToActivate.CreatedAt = DateTime.UtcNow;
                 }
                 else
                 {
@@ -226,7 +238,7 @@ namespace HIV.Repository
                 .ThenInclude(d => d.Arv)
                 .Include(cp => cp.BaseProtocol)
                 .Where(cp => cp.PatientId == patientId)
-                .OrderByDescending(cp => cp.CustomProtocolId)
+                .OrderByDescending(cp => cp.CreatedAt) 
                 .Select(cp => new FullCustomProtocolDto
                 {
                     CustomProtocolId = cp.CustomProtocolId,
