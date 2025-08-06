@@ -174,9 +174,7 @@ namespace HIV.Repository
                     {
                         string s when s.Contains("sáng", StringComparison.OrdinalIgnoreCase) => 6,
                         string s when s.Contains("tối", StringComparison.OrdinalIgnoreCase) => 18,
-                        string s when s.Contains("trước ăn", StringComparison.OrdinalIgnoreCase) => 7,
-                        string s when s.Contains("trước ngủ", StringComparison.OrdinalIgnoreCase) => 21,
-                        _ => 20
+                        _ => 7
                     };
 
                     var reminderTime = currentDate.AddHours(hour);
@@ -224,14 +222,14 @@ namespace HIV.Repository
             var room = appointment.Schedule?.Room ?? "Phòng chưa rõ";
             var appointmentTime = appointment.AppointmentDate;
 
-            string messageBase = $"Lịch hẹn với bác sĩ {doctorName} vào {appointmentTime:HH:mm dd/MM/yyyy} tại phòng {room}.";
+            string messageBase = $"Bạn có lịch hẹn với bác sĩ {doctorName} vào {appointmentTime:HH:mm dd/MM/yyyy} tại phòng {room}. Chúng tôi sẽ gọi điện xác nhận check-in hộ bạn";
 
             // 🟢 Gửi thông báo NGAY khi xác nhận
             await CreateNotification(new CreateNotificationDto
             {
                 UserId = appointment.PatientId,
                 Type = "appointment",
-                Message = $"📅 {messageBase}",
+                Message = $" {messageBase}",
                 ScheduledTime = DateTime.Now,
                 AppointmentId = appointmentId
             });
@@ -244,7 +242,7 @@ namespace HIV.Repository
                 {
                     UserId = appointment.PatientId,
                     Type = "appointment",
-                    Message = $"🔔 Nhắc lịch: {messageBase}",
+                    Message = $" Nhắc lịch: {messageBase}",
                     ScheduledTime = reminderTime,
                     AppointmentId = appointmentId
                 });
