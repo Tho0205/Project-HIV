@@ -11,25 +11,25 @@ namespace HIV.Controllers
 
     public class BlogController : ControllerBase
     {
-        private readonly IBlogService _blogService;
+        private readonly IBlogRepository _blogRepo;
         private readonly IWebHostEnvironment _env;
-        public BlogController(IBlogService blogService, IWebHostEnvironment env)
+        public BlogController(IBlogRepository blogRepository, IWebHostEnvironment env)
         {
-            _blogService = blogService;
+            _blogRepo = blogRepository;
             _env = env;
         }
 
         [HttpGet("list")]
         public async Task<IActionResult> GetAllBlogs()
         {
-            var blogs = await _blogService.GetAllBlogsAsync();
+            var blogs = await _blogRepo.GetAllBlogsAsync();
             return Ok(blogs);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBlogById(int id)
         {
-            var blog = await _blogService.GetBlogByIdAsync(id);
+            var blog = await _blogRepo.GetBlogByIdAsync(id);
             if (blog == null)
             {
                 return NotFound();
@@ -46,7 +46,7 @@ namespace HIV.Controllers
             {
                 return BadRequest("Blog data is null");
             }
-            var createdBlog = await _blogService.CreateBlogAsync(blogDto);
+            var createdBlog = await _blogRepo.CreateBlogAsync(blogDto);
             return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.BlogId }, createdBlog);
         }
 
@@ -58,7 +58,7 @@ namespace HIV.Controllers
             {
                 return BadRequest("Blog data is invalid");
             }
-            var updatedBlog = await _blogService.UpdateBlogAsync(id, blogDto);
+            var updatedBlog = await _blogRepo.UpdateBlogAsync(id, blogDto);
             if (updatedBlog == null)
             {
                 return NotFound();
@@ -70,7 +70,7 @@ namespace HIV.Controllers
         [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> ApproveBlog(int id)
         {
-            var approvedBlog = await _blogService.ApproveBlogAsync(id);
+            var approvedBlog = await _blogRepo.ApproveBlogAsync(id);
             if (approvedBlog == null)
             {
                 return NotFound();
@@ -82,7 +82,7 @@ namespace HIV.Controllers
         [Authorize(Roles = "Doctor,Patient,Staff,Manager")]
         public async Task<IActionResult> DeleteBlog(int id)
         {
-            var isDeleted = await _blogService.DeleteBlogAsync(id);
+            var isDeleted = await _blogRepo.DeleteBlogAsync(id);
             if (!isDeleted)
             {
                 return NotFound();

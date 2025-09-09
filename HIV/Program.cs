@@ -157,7 +157,7 @@ namespace HIV
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
             builder.Services.AddScoped<IAdminManagementAccount, AdminAccountService>();
 
-            builder.Services.AddScoped<IBlogService, BlogService>();
+            builder.Services.AddScoped<IBlogRepository, BlogRepository>();
             builder.Services.AddScoped<IEducationalResourcesService, EducationalResourcesService>();
             builder.Services.AddScoped<IHIVExaminationService, HIVExaminationService>();
             builder.Services.AddScoped<IScheduleService, ScheduleService>();

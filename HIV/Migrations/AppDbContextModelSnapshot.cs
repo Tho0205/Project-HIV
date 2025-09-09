@@ -259,8 +259,14 @@ namespace HIV.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomProtocolId"));
 
+                    b.Property<int?>("AppointmentId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("BaseProtocolId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -279,6 +285,8 @@ namespace HIV.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CustomProtocolId");
+
+                    b.HasIndex("AppointmentId");
 
                     b.HasIndex("BaseProtocolId");
 
@@ -383,6 +391,9 @@ namespace HIV.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExamId"));
 
+                    b.Property<int?>("AppointmentId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Cd4Count")
                         .HasColumnType("int");
 
@@ -410,6 +421,8 @@ namespace HIV.Migrations
 
                     b.HasKey("ExamId");
 
+                    b.HasIndex("AppointmentId");
+
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
@@ -424,6 +437,9 @@ namespace HIV.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordId"));
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CustomProtocolId")
                         .HasColumnType("int");
@@ -454,6 +470,8 @@ namespace HIV.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("RecordId");
+
+                    b.HasIndex("AppointmentId");
 
                     b.HasIndex("CustomProtocolId");
 
@@ -670,6 +688,11 @@ namespace HIV.Migrations
 
             modelBuilder.Entity("HIV.Models.CustomizedArvProtocol", b =>
                 {
+                    b.HasOne("HIV.Models.Appointment", "Appointment")
+                        .WithMany("CustomizedProtocols")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("HIV.Models.ARVProtocol", "BaseProtocol")
                         .WithMany("CustomizedProtocols")
                         .HasForeignKey("BaseProtocolId");
@@ -683,6 +706,8 @@ namespace HIV.Migrations
                         .WithMany("CustomProtocolsAsPatient")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Appointment");
 
                     b.Navigation("BaseProtocol");
 
@@ -733,6 +758,11 @@ namespace HIV.Migrations
 
             modelBuilder.Entity("HIV.Models.Examination", b =>
                 {
+                    b.HasOne("HIV.Models.Appointment", "Appointment")
+                        .WithMany("Examinations")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("HIV.Models.User", "Doctor")
                         .WithMany("ExaminationsAsDoctor")
                         .HasForeignKey("DoctorId")
@@ -745,6 +775,8 @@ namespace HIV.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Appointment");
+
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
@@ -752,6 +784,12 @@ namespace HIV.Migrations
 
             modelBuilder.Entity("HIV.Models.MedicalRecord", b =>
                 {
+                    b.HasOne("HIV.Models.Appointment", "Appointment")
+                        .WithMany("MedicalRecords")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("HIV.Models.CustomizedArvProtocol", "CustomProtocol")
                         .WithMany("MedicalRecords")
                         .HasForeignKey("CustomProtocolId");
@@ -773,6 +811,8 @@ namespace HIV.Migrations
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Appointment");
 
                     b.Navigation("CustomProtocol");
 
@@ -843,6 +883,15 @@ namespace HIV.Migrations
                 {
                     b.Navigation("User")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HIV.Models.Appointment", b =>
+                {
+                    b.Navigation("CustomizedProtocols");
+
+                    b.Navigation("Examinations");
+
+                    b.Navigation("MedicalRecords");
                 });
 
             modelBuilder.Entity("HIV.Models.Arv", b =>

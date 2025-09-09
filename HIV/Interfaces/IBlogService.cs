@@ -2,7 +2,7 @@
 using HIV.DTOs;
 using HIV.Interfaces;
 
-public interface IBlogService
+public interface IBlogRepository
 {
     Task<IEnumerable<BlogDto>> GetAllBlogsAsync();
     Task<BlogDto> GetBlogByIdAsync(int id);

@@ -6,12 +6,12 @@ using HIV.DTOs;
 
 namespace HIV.Repository
 {
-    public class BlogService : IBlogService
+    public class BlogRepository : IBlogRepository
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
 
-        public BlogService(AppDbContext context, IMapper mapper)
+        public BlogRepository(AppDbContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
